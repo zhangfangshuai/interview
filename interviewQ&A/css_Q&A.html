@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>css-center</title>
+    <style>
+        html {
+            height: 100%;
+        }
+        body {
+            height: 100%;
+        }
+        .container {
+            display: flex;
+            height: 50%;
+        }
+        .box1 {
+            width: 200px;
+            height: 200px;
+            background: orange;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- 居中最快办法 -->
+    <div class="container">
+        <div class="box1">
+            <p>上下左右最简便居中办法：</p>
+            <p>flex + margin:auto</p>
+        </div>
+    </div>
+
+    <br />
+    <!-- padding和margin有什么不同 -->
+    <div class="box2">
+        <p>Q: padding和margin有什么不同?</p>
+        <p>A: 作用对象不同，padding作用于自己，margin作用于外围</p>
+    </div>
+
+    <br />
+    <!-- vw和%有什么不同 -->
+    <div class="box2">
+        <p>Q: vw和%有什么不同?</p>
+        <div style="width: 50vw">vw针对视口</div>
+        <div style="width: 50%">%继承于父级元素</div>
+    </div>
+
+    <br />
+    <!-- 让谷歌浏览器支持小字体 -->
+    <div class="box3">
+        <p>Q: 让谷歌浏览器支持小字体?</p>
+        <p>通过 transtorm:scale() 实现小字体</p>
+    </div>
+</body>
+</html>

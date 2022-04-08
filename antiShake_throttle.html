@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>study-antiShake_throttle</title>
+    <style>
+        .throttle {
+            width: 200px;
+            height: 200px;
+            background: green;
+            margin-top: 12px;
+            padding: 24PX;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>防抖与节流</h2>
+    <input class="antiShake" placeholder="请输入-防抖">
+
+    <div class="throttle">节流</div>
+    <script>
+        /**
+         * @func 防抖：用户短时间内多次触发请求，只发起最后一次，将多个请求变成一次
+         * @desc 核心：一定时间内没有继续操作后执行处理函数。时间范围内只要来新请求，立刻取消上一次操作。
+         * @desc 经典案例：模糊搜索
+         */
+        let telInput = document.querySelector('.antiShake')
+
+        // 未防抖情形
+        // telInput.addEventListener('input', (e) => {
+        //     request()
+        // })
+
+        // 加了防抖 - antiShake通过闭包返回了函数
+        telInput.addEventListener('input', antiShake(request, 2000))
+
+
+        // 防抖函数 (本案例利用闭包实现，这样无需再antiShake外部定义timeout变量)
+        function antiShake(fn, wait) {
+            let timer = null
+            return args => {
+                if (timer) clearTimeout(timer)
+                timer = setTimeout(fn, wait)
+            }
+        }
+
+        function request() {
+            console.log('发起请求了')
+        }
+
+
+        /**
+         * @func 节流: 用户的某些操作导致重复的发起相同的请求，只发起第一次
+         * @desc 应用场景：提交表单，点击提交按钮，卡片的监听事件如touchmove
+         */
+        let box = document.querySelector('.throttle')
+
+        // 未节流情形
+        // box.addEventListener('touchmove', (e) => {
+        //     request()
+        // })
+
+        // 加了节流：
+        box.addEventListener('touchmove', throttle(request, 2000))
+
+        // 节流函数：触发后开始计时，时间间隔内再过来的请求直接忽略，计时完成执行函数后，再接收下一个请求
+        function throttle(event, wait) {
+            let timer = null
+            return args => {
+                if (!timer) {
+                    timer = setTimeout(() => {
+                        event()
+                        timer = null
+                    }, wait)
+                }
+            }
+        }
+    </script>
+</body>
+</html>

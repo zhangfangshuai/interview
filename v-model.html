@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>study_v-model</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+</head>
+<body>
+    <h3>v-model 官方案例</h3>
+    <div id="app">
+        <input v-model="name" placeholder="请输入-vue官方案例" />
+        <div>vue案例显示值: {{ name }}</div>
+    </div>
+    <script>
+        new Vue({
+            el: '#app',
+            data () {
+                return {
+                    name: ''
+                }
+            }
+        })
+    </script>
+
+
+
+    <h3>v-model 手写原理</h3>
+    <!-- 双向数据绑定原理 -->
+    <input id="username" placeholder="请输入" />
+    <div>双向绑定显示值：<span id="uName"></span></div>
+
+    <script>
+        /**
+         * @func 双向数据绑定的实现原理 
+         * 1、监听input的keyup事件的发生
+         * 2、keyup发生，导致input内容改变，修改obj的属性的值
+         * 3、通过defineProperty劫持你对对象obj的操作，属性值的改变
+         * 4、通过set方法，设置或更新绑定位置位置的显示内容
+         */
+        let person = {}
+        Object.defineProperty(person, "username", {
+            get: function() {
+                console.log('取值')
+            },
+            set: function(val) {
+                console.log('设置值')
+                document.getElementById('uName').innerText = val
+            }
+        })
+        // 监听input的keyup事件，触发obj.username属性发生改变，从而触发defineProperty监听
+        document.getElementById('username').addEventListener('keyup', function() {
+            // 监听事件有内置对象 event
+            person.username = event.target.value
+        })
+
+    </script>
+</body>
+</html>
