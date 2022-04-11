@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -9,9 +8,84 @@
 </head>
 
 <body>
-    <h2>your title</h2>
+    <h2>my test page - 手写promise</h2>
     <script>
+        // 正常promise使用
+        let p1 = new Promise((resolve, reject) => {
+            let async_request = true
+            if (async_request) {
+                resolve({ data: 'p1 resolved' })
+            } else {
+                reject({msg: 'p1 rejected'})
+            }
+        })
 
+        p1.then(res => {
+            console.log(res.data)
+        })
+
+
+        // 手写promise
+        // 1. promise是个构造函数
+        function myPromise(callback) {
+            let self = this
+            self.status = 'pending'
+            self.value = null
+            self.reason = null
+
+             self.onFulfilledCallbacks = []
+             self.onRejectedCallbacks = []
+
+            function resolve(value) {
+                if (self.status === 'pending') {
+                    self.value = value
+                    self.status = 'fulfilled'
+
+                    self.onFulfilledCallbacks.forEach(fn => fn(value))
+                }
+            }
+
+            function reject(reason) {
+                if (self.status === 'pending') {
+                    self.reason = reason
+                    self.status = 'rejected'
+
+                    self.onRejectedCallbacks.forEach(fn => fn(reason))
+                }
+            }
+
+            // 实例化即执行
+            callback && callback(resolve, reject)
+        }
+
+        myPromise.prototype.then = function(onFulfilled, onRejected) {
+            let _this = this
+            onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : (data) => { resolve(data) }
+            onRejected = typeof onRejected === 'function' ? onRejected : err => { throw err }
+    
+            if (_this.status === 'pending') {
+               onFulfilled && _this.onFulfilledCallbacks.push(onFulfilled)
+               onRejected && _this.onRejectedCallbacks.push(onRejected)
+            }
+        }
+
+
+        let mp1 = new myPromise((resolve, reject) => {
+            console.log('1000')
+            let ok = true
+            if (ok) {
+                setTimeout(() => {
+                    console.log('进入setTimeout')
+                    resolve({data: 'resolve data _ setTimeout'})
+                }, 1000)
+            } else {
+                reject()
+            }
+        })
+        
+        mp1.then(res => {
+            console.log(6, res)
+        })
     </script>
 </body>
 </html>

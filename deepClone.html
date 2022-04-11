@@ -65,8 +65,8 @@
                 // 如果是原型链上的属性，无需拷贝
                 if (source.hasOwnProperty(key)) {
                     if (source[key] && typeof source[key] === 'object') {
-                        // 是对象或数组，递归查找
-                        target[key] = source[key].constructor === Array ? [] : {}
+                        // 是对象或数组，递归查找。
+                        target[key] = source[key].constructor === Array ? [] : {}  // 维护层代码，起解释性作用
                         target[key] = deepClone(source[key])
                     } else {
                         // 是基本数据类型,或者函数，直接赋值

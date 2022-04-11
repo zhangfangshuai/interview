@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promise</title>
+</head>
+<body>
+    <h3>Promise</h3>
+    <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
+    <div>
+        <h3>场景</h3>
+        <ol>
+            <li>解决Ajax回调地狱问题</li>
+            <li>异步任务回调改成同步写法</li>
+            <li>某些逻辑需要等待上一个逻辑执行完成。或者拆分大函数，后部分逻辑需要等待前部分逻辑执行完</li>
+        </ol>
+        <h3>基础</h3>
+        <ol>
+            <li>Promise是异步的，代表未来某个时机会执行。</li>
+            <li>三种状态（1）pending(待定的)；（2）fulfilled(已解决); （3）rejected(已失败)；一旦状态改变，不可逆，任何时候都可以得到这个结果</li>
+            <li>Promise对象是一个构造函数，用来生成Promise实例</li>
+            <li>实例化时，Promise构造函数接受一个函数作为参数，该函数的两个参数分别是resolve和reject，resolve用来将“未完成”变成“完成”，reject将“未完成”变成“失败”</li>
+        </ol>
+        <h3>Promise方法</h3>
+        <ol>
+            <li><b>all()：</b>Promise.all([p1, p2, p3])，所有异步函数都变成fulfilled时，才返回fulfilled，有一个变成rejected，就返回rejected</li>
+            <li><b>allSettled()：</b>Promise.allSettled([p1, p2, p3])，所有异步都执行完后返回。成功给出结果，失败给出原因，</li>
+            <li><b>race()：</b>Promise.race([p1, p2, p3])，只要有一个异步函数执行完成返回成功或失败，就返回成功或失败，且立刻结束，其他请求的数据不再关心</li>
+            <li><b>any()：</b>Promise.any([p1, p2, p3])，只要有一个执行成功，就返回该promise数据</li>
+            <img src="./images/promise.race.jpg" alt="">
+        </ol>
+        <h3>Promise链式调用</h3>
+        <ol>
+            <li>被链式调用的函数需要返回一个promise，同时可以接收一个参数，来自于上一个promise的执行结果。具体见script部分</li>
+        </ol>
+        <h3>手写Promise</h3>
+        <ol>
+            <li>见script部分</li>
+        </ol>
+    </div>
+</body>
+<script>
+
+    /**
+     * @func Promise链式调用案例 
+     */
+    let p1 = new Promise((resolve, reject) => {
+        let ok = true
+        if (ok) {
+            resolve({p1: 'p1 resolve'})
+            console.log('p1 resolved has run')
+        } else {
+            reject({message: 'p1 rejected'})
+        }
+    })
+
+    let p2 = new Promise((resolve, reject) => {
+        resolve('p2 resolve')
+    })
+
+    // 要实现链式调用，需要返回一个promise。同时，可以接收一个参数，来自于上一个promise执行的结果。
+    let p3 = (preChainRes) => {
+        return Promise.resolve({
+            preChainRes,
+            p3: 'p3 resolve'
+        })
+    }
+
+    // 链式调用写法
+    let testChain = () => {
+        p1
+            .then(p3) // p3会接收来自then的执行结果，作为参数传给p3
+            .then(resolve => {
+                console.log(resolve)
+            })
+            .catch(err => {
+                console.log(err.message)
+            })
+    }
+
+    testChain() // { preChainRes: { p1: 'p1 resolve' }, p3: 'p3 resolve'}
+
+
+    
+
+    /**
+    * @func 手写Promise
+    * @desc Promise是一个构造函数，.then和.catch这些方法应该在原型上
+    * @desc 需要接收一个函数，来自动执行new时传入的函数
+    */
+    // 1.基础结构
+    function myPromise(callback) {
+        let _this = this
+        _this.status = 'pending' // 当前执行状态
+        _this.value = null // 成功之后返回数据
+        _this.reason = null // 失败的原因
+
+        // 7.1 解决异步问题，采用发布订阅模式，存储异步执行完成后需要调用的方法
+        _this.onFulfilledCallbacks = []
+        _this.onRejectedCallbacks = []
+
+        // 成功的返回
+        function resolve(value) {
+            // 5.1
+            if (_this.status === 'pending') {
+                _this.value = value  // 存储成功结果
+                _this.status = 'fulfilled'
+
+                // 8.1 解决异步问题，状态发生变更，执行回调函数
+                _this.onFulfilledCallbacks.forEach(item => item(value))
+            }
+        }
+
+        // 失败的返回
+        function reject(reason) {
+            // 5.2
+            if (_this.status === 'pending') {
+                _this.reason = reason // 存储成功结果
+                _this.status = 'rejected'
+
+                // 8.2 解决异步问题，状态发生变更，执行回调函数
+                _this.onRejectedCallbacks.forEach(item => item(value))
+            }
+        }
+
+        // 4. 立即执行回调函数
+        callback && callback(resolve, reject)
+    }
+
+    // 2.1 .then： 每次实例化，都需要自动带有.then方法，因此放在原型上
+    myPromise.prototype.then = function(onFulfilled, onRejected) {
+        // 6. fulfilled之后，都会调用.then方法，
+        onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : (data) => { resolve(data) }
+        onRejected = typeof onRejected === 'function' ? onRejected : (err) => { throw err }
+
+        // 7.2 解决异步问题，将回调函数存在暂存区，当状态发生变更时，再去执行回调函数
+        let self = this
+        if (self.status === 'pending') {
+            self.onFulfilledCallbacks.push(onFulfilled)
+            self.onRejectedCallbacks.push(onRejected)
+        }
+    }
+
+    // 2.2 .catch，是.then第二个参数的语法糖。同理，需要放在原型上。.catch是.then的部分功能
+    myPromise.prototype.catch = function(onRejected) {
+        _this.then(null, onRejected)
+    }
+
+    // 3. 初始调用。传入参数，让构造函数把实参传出来，即：resolve，reject
+    let demo = new myPromise((resolve, reject) => {
+        console.log('myPromise回调函数，同步任务执行了')
+        // 异步任务
+        setTimeout(() => {
+            resolve('异步任务')
+        }, 2000)
+    })
+    
+    demo.then((data) => {
+        console.log(`myPromise回调函数，${data}执行了`)
+    })
+
+
+
+    // 如果需要实现链式调用
+    myPromise.prototype.then_chain = function(onFulfilled, onRejected) {
+        onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : (data) => { resolve(data) }
+        onRejected = typeof onRejected === 'function' ? onRejected : (err) => { throw err }
+
+        let self = this
+        // 如果是链式调用，判断传入的参数是否是promise，如果是，继续执行.then，如果不是，返回结果
+        if (self.status === 'fulfilled') {
+            return new myPromise((resolve, reject) => {
+                try {
+                    let x = onFulfilled(self.value) // 将上一个promise结果当作番薯传给传入的promise
+                    x instanceof myPromise ? x.then(resolve, reject) : resolve(x)
+                } catch (error) {
+                    reject(error)
+                }
+            })
+        }
+
+        if (self.status === 'rejected') {
+            return new myPromise((resolve, reject) => {
+                try {
+                    let x = onRejected(self.reason)
+                    x instanceof myPromise ? x.then(resolve, reject) : reason
+                } catch (error) {
+                    reject(error)
+                }
+            })
+        }
+
+        // 解决异步任务回调执行问题，添加订阅模式
+        if (self.status === 'pending') {
+            return new myPromise((resolve, reject) => {
+                self.onFulfilledCallbacks.push(() => {
+                    let x = onFulfilled(self.value)
+                    x instanceof myPromise ? x.then(resolve, reject) : resolve(x)
+                })
+                self.onRejectedCallbacks.push(() => {
+                    let x = onRejected(self.reason)
+                    x instanceof myPromise ? x.then(resolve, reject) : resolve(x)
+                })
+            })
+        }
+    }
+</script>
+</html>
