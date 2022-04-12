@@ -3,7 +3,9 @@ function resolve(dir) {
     return path.join(__dirname, dir)
 }
 
-const apmlink = (mode === 'prod' || mode === 'pre') ? '' : '.test'
+// 区分不同环境，配置不同的cdn地址
+const mode = process.env.VUE_APP_MODE || 'prod'
+console.log('当前构建环境为：' + mode)
 
 // CDN资源
 const cdn = {
@@ -46,6 +48,7 @@ module.exports = {
     productionSourceMap: process.env.NODE_ENV === 'development',
     /**
      * 本地代理跨域请求
+     * @desc webpack会在本地开启一个node服务，用来转发请求
      */
     devServer: {
         host: 'localhost.domain.com', // 需要在hosts文件添加配置：127.0.0.1 localhost.domain.com
@@ -55,16 +58,46 @@ module.exports = {
         proxy: {
             // 其他配置
             '/demo': {
-                target: 'https://demo.domain.com/path',
+                target: 'https://demo.domain.com/path', // 代理的真实服务
                 changeOrigin: true,
-                ws: true,
+                ws: true, // 本地开发开启ws通道保持连接
                 pathRewrite: {
                     '^/demo': ''
                 }
             }
         }
     },
+    /**
+     * css 全局配置，以sass为例。也可以使用 131行 的用法
+     */
+    css: {
+        loaderOptions: {
+            sass: {
+                prependData: `@import "./css/vars.scss"`
+            }
+        }
+    },
+
     configureWebpack: config => {
+        // 性能优化：生产环境代码压缩
+        if (process.env.VUE_APP_MODE === 'prod') {
+            config.plugins.push(
+                new UglifyJsPlugin({
+                    uglifyOptions: {
+                        // 生产环境自动删除console
+                        warnings: false,
+                        compress: {
+                            // warnings: false  // 如果打包错误，注释本行
+                            drop_debugger: true,
+                            drop_console: true,
+                            pure_funcs: ['console.log']
+                        }
+                    },
+                    sourceMap: false,
+                    parallel: true
+                })
+            )
+        }
         return {
             name: name,
             externals: cdn.externals,
@@ -80,23 +113,6 @@ module.exports = {
         }
     },
 
-    plugins: [
-        new ModuleFederationPlugin({
-            name: "app_one_remote",
-            remotes: {
-                app_two: "app_two_remote",
-                app_three: "app_three_remote"
-            },
-            exposes: {
-                'AppContainer':'./src/App'
-            },
-            shared: ["react", "react-dom","react-router-dom"]
-        }),
-        new HtmlWebpackPlugin({
-            template: "./public/index.html",
-            chunks: ["main"]
-        })
-    ],
     chainWebpack(config) {
         config.plugins.delete('preload')
         config.plugins.delete('prefetch')
@@ -112,7 +128,7 @@ module.exports = {
             args[0].cdn = cdn
             return args
         })
-        // set svg-sprite-loader
+        // 设置svg雪碧图
         config.module
             .rule('svg')
             .exclude.add(resolve('src/icons'))
@@ -128,27 +144,30 @@ module.exports = {
                 symbolId: 'icon-[name]'
             })
             .end()
-        // css pre analysis
+        // css 预解析
         const oneOfsMap = config.module.rule('scss').oneOfs.store
         oneOfsMap.forEach(item => {
             item.use('sass-resources-loader')
                 .loader('sass-resources-loader')
                 .options({
-                    // 公用scss
-                    resources: './src/style/vars.scss'
+                    // 公用scss，全局配置
+                    resources: './css/vars.scss'
                 })
                 .end()
         })
         config.when(process.env.NODE_ENV === 'development', config =>
             config.devtool('cheap-source-map')
         ).end()
-        // set preserveWhitespace
+        // Vue-loader: https://vue-loader.vuejs.org/zh/options.html#compiler
         config.module
             .rule('vue')
             .use('vue-loader')
             .loader('vue-loader')
             .tap(options => {
+                // 去掉模板标签之间的空格
                 options.compilerOptions.preserveWhitespace = true
+                // 使用xss的npm包过滤来自指令的xss攻击风险。通过给指令包上一层xss处理函数进行过滤
+                // main.js： import xss from 'xss'; Vue.prototype.xss = xss;
                 options.compilerOptions.directives = {
                     html(node, directiveMeta) {
                         const props = node.props || (node.props = [])
@@ -161,11 +180,13 @@ module.exports = {
                 return options
             })
             .end()
+        // 配置source-map(源码)： // cheap-source-map--不显示源码 、source-map--显示源码 、 eval--最快的编译办法
         config
             .when(process.env.NODE_ENV === 'development', config =>
                 config.devtool('cheap-source-map')
             ).end()
-        config.when(process.env.NODE_ENV !== 'development', config => {
+        config
+            .when(process.env.NODE_ENV !== 'development', config => {
             config
                 .plugin('ScriptExtHtmlWebpackPlugin')
                 .after('html')
@@ -175,14 +196,17 @@ module.exports = {
                     }
                 ])
                 .end()
+            // 包拆分
             config.optimization.splitChunks({
+                // 分割代码的模式, async-只分割出异步引入的模块, initial-只分割同步引入模块, all-同步异步都分割
                 chunks: 'all',
+                // 缓存组。将所有加载模块放在缓存里一起分割打包
                 cacheGroups: {
-                    libs: {
-                        name: 'chunk-libs',
+                    libs: { // 自定义打包模块
+                        name: 'chunk-libs', // 打包输出文件名+hash值
                         test: /[\\/]node_modules[\\/]/,
-                        priority: 10,
-                        chunks: 'initial'
+                        priority: 10, // 优先级。先打包到哪个组里
+                        chunks: 'initial' // 分割代码的模式，如上
                     },
                     elementUI: {
                         name: 'chunk-elementUI',
@@ -200,6 +224,11 @@ module.exports = {
                         minChunks: 3,
                         priority: 5,
                         reuseExistingChunk: true
+                    },
+                    default: { // 默认打包模块
+                        priority: -20,
+                        reuseExistingChunk: true, // 模块嵌套引入是，判断是否服用已经被打包的模块
+                        name: 'common.js'
                     }
                 }
             })

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        code {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h2>API层架构设计</h2>
+    <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
+    <h3>架构模型</h3>
+    <img style="width: 800px;" src="./images/api_level.jpg" alt="">
+    <h3>API设计</h3>
+    <div>应该尽可能的避免服务端与业务层直接交互，因为这样服务端设计的很多api path会被引入到业务代码中，很脏乱。因此我们需要设计API层，用来中和这个矛盾。</div>
+    <h4>service.js:</h4>
+    <ol>
+        <li>二次封装axios。</li>
+        <code>
+            const service = axios.create({ 
+                baseURL: '', 
+                timeout: 8000  
+            })
+        </code>
+        <li>统一处理请求和响应拦截器，接口token统一处理。 </li>
+        <code>
+            service.interceptors.request.use(config => { ...见script部分... })
+        </code>
+        <br/>
+        <code>
+            service.interceptors.response.use(response => { ...见script部分... })
+        </code>
+        <li>统一处理取消请求控制器。</li>
+        <code>
+            config.cancelToken = new CancelToken((c) => {
+                cancelToken[key] = c
+            }) ...
+        </code>
+        <li>接口层（http code）异常统一处理。</li>
+        <code>
+            service.interceptors.response.use(response => {}, err => { ...见script... })
+        </code>
+    </ol>
+    <h4>businessApi.js</h4>
+    <ol>
+        <li>对业务API用法，对service.js的使用</li>
+        <code>import service from './service.js'</code><br>
+        <code>
+            export function getUserInfo(params) {
+                return service({
+                    url: '/api/get/userinfo',
+                    methods: 'get',
+                    params
+                })
+            }
+        </code><br>
+        <code>
+            export function submit(data) {
+                return service({
+                    url: '/api/post/submit',
+                    methods: 'post',
+                    data
+                })
+            }
+        </code>
+    </ol>
+
+    <script>
+        import axios from 'axios'
+
+        // 根据url和请求方式生成url的唯一key
+        const getUrlKey = config => `SYSTEM_NAME_${config.url}`
+        const cancelToken = {} // 数组用于储存每个请求的取消函数和请求标识
+        const CancelToken = axios.CancelToken
+
+        // create an axios instance
+        const service = axios.create({
+            baseURL: process.env.VUE_APP_BASE_API,
+            withCredentials: true, // 跨域携带cookie
+            timeout: 15000
+        })
+
+        // 取消被多次发起的请求，保留最后一个
+        const cancelAjax = (type, config) => {
+            const key = getUrlKey(config)
+            if (type === 'check') {
+                if (!cancelToken[key]) {
+                    config.cancelToken = new CancelToken((c) => {
+                        cancelToken[key] = c
+                    })
+                } else {
+                    cancelToken[key]()
+                }
+            } else if (type === 'remove') {
+                delete cancelToken[key]
+            }
+        }
+
+        // 允许多次重复调用的API白名单
+        const cancelTokenWhiteList = []
+        // 无需校验token的白名单
+        const checkTokenWhiteList = [
+            '/login'
+        ]
+
+        // request interceptor
+        service.interceptors.request.use((config) => {
+            if (!cancelTokenWhiteList.includes(config.url)) {
+                cancelAjax('check', config)
+            }
+            // 统一添加token
+            if (!checkTokenWhiteList.includes(config.url)) {
+                if (getTokenBySession()) {
+                    config.headers['token'] = getTokenBySession()
+                } else {
+                    // to login
+                    // 这里要用vue调用，需要再main.js文件，将vue导出 export default vue。
+                    // 然后再本文件引入
+                    vue.$router.push('/login')
+                }
+            }
+            return config
+        }, err => {
+            console.log('request intercepter err:' + err) // 打印错误
+            return Promise.reject(err)
+        })
+
+        // response interceptor
+        service.interceptors.response.use(
+            async response => {
+                cancelAjax('remove', response.config)
+                // 检测当前用户信息与SSO信息是否一致
+                response.headers.account && checkAccount(response)
+                const res = response.data
+                // 业务Code为200-成功
+                if (res.code !== 200 && res.code !== '200') {
+                    try {
+                        // 403 用户越权访问
+                        if (res.code === 403 || res.code === '403') {
+                            const query = parseUrl(window.location.href) || {}
+                            router.push({ path: '/403', query })
+                        } else {
+                            // 防止过多访问
+                            if (!window.MessageShow) {
+                                window.MessageShow = true
+                                Message({
+                                    message: res.message || 'Error',
+                                    type: 'error',
+                                    duration: 2 * 1000,
+                                    onClose: () => {
+                                        window.MessageShow = false
+                                    }
+                                })
+                            }
+                        }
+                        return Promise.reject(new Error(res.message || 'Error'))
+                    } catch (err) {
+                        console.log('response interceptor处理异常业务时发生错误', err)
+                    }
+                } else {
+                    return res.data
+                }
+            },
+            err => {
+                console.log('response intercepter err: ' + err) // 打印错误
+                if (err && err.response) {
+                    const query = parseUrl(window.location.href) || {}
+                    switch (Number(err.response.status)) {
+                    case 401:
+                        // 在云图梭内运行
+                        err.message = err.response.data.msg || '登录信息已失效，请您重新登录'
+                        window.location.href = err.response.data.loginUrl
+                        break
+                    case 403:
+                        router.push({ path: '/403', query })
+                        break
+                    case 404:
+                        router.push({ path: '/404', query })
+                        break
+                    default:
+                        window.failPageUrl = window.location.href
+                        router.push({ path: '/500', query })
+                    }
+                }
+                if (err.toString().indexOf('timeout') !== -1) {
+                    Message({
+                        message: '您当前网络较差，请切换网络活稍后重试！',
+                        type: 'error',
+                        duration: 2 * 1000
+                    })
+                }
+                return Promise.reject(err)
+            }
+        )
+
+        export default service
+    </script>
+</body>
+</html>

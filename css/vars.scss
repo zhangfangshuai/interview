@@ -1,0 +1,127 @@
+/* 辅色 */
+$color-black: #000;
+$color-white: #fff;
+$color-blue: #007AF5;
+$color-mint: #64D7B9;
+$color-green: #7DD75A;
+$color-vanilla: #F0DC5A;
+$color-yellow: #FFBE5A;
+$color-tomato: #DC5564;
+$color-red: #FA5F87;
+$color-lavender: #CD50D2;
+$color-grape: #7D50DC;
+$color-indigo: #4655F0;
+
+/* 主色 */
+$color-brand: $color-blue; // 品牌色
+
+/* 环境色 */
+$color-gray-1: #323232;
+$color-gray-2: #646464;
+$color-gray-3: #5B5B5B;
+$color-gray-4: #6F6F6F;
+$color-gray-5: #848484;
+$color-gray-6: #999999;
+$color-gray-7: #ADADAD;
+$color-gray-8: #C1C1C1;
+$color-gray-9: #D6D6D6;
+$color-gray-10: #EAEAEA;
+$color-gray-11: #F5F5F5;
+
+/**
+ * @desc: {body} 整体容器
+ * @desc: {page} 路由页面
+ * @desc: {content} 页面内容器 
+ */
+/* 最外层容器设置 */
+$body-min-width: 920px;
+$body-max-width: 1920px;
+/* 背景颜色 */
+$body-bg-color: #F5F5F5;
+$page-bg-color: #FBFBFB;
+$content-bg-color: #FFFFFF;
+$primary-bg-color: #007AF5;
+$plain-bg-color: #F4F5F6;
+$total-bg-color: #E5F2FE;
+$skeleton-bg-color: #EAEAEA;
+
+/* 边框颜色 */
+$split-border-color: #F5F5F5;
+$content-border-color: #EAEAEA;
+$plain-border-color: #DCDFE6;
+
+/* 圆角设置 */
+$content-border-radius: 4px;
+
+/* 文字通用颜色设置 */
+$highlight-font-color: #007AF5;
+$primary-font-color: #111111;
+$plain-font-color: #999999;
+$empty-font-color: #464646;
+$disable-font-color: #C0C4CC;
+$suffix-arrow-color: #464646;
+$input-inner-color: #606262;
+
+/* 文字大小设置 */
+$primary-font-size: 14px;
+$plain-font-size: 12px;
+$unit-font-size: 10px;
+
+/* 按钮颜色样式设置 */
+
+$color-light-gray: $color-gray-8;
+
+/* 字体颜色 */
+$color-font-primary: $color-gray-1; // 主色 用于标题、正文
+$color-font-secondary: $color-gray-4; // 辅助 用于次要文字信息
+$color-font-sub: $color-gray-6; // 辅助 用于次要文字信息
+
+/* 背景色 */
+$color-bg-gray: $color-gray-11; // 淡灰色背景
+/* 线 */
+$color-line: $color-gray-10; // 分割线
+$color-border: $color-gray-10; // 边框
+
+/* 常用代码块 */
+
+// 文字显示行数，超出...
+@mixin lines($line: 1) {
+  display: -webkit-box;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  -webkit-line-clamp: $line;
+  -webkit-box-orient: vertical;
+}
+
+// 大小
+@mixin size($w, $h: $w) {
+  width: $w;
+  height: $h;
+}
+
+/*
+* 三角形
+* $width：宽度
+* $config：三角形位置及颜色配置
+* 格式: (top: #ff0000; right: #ffa500; bottom: #e41ad9; left: #0000ff)
+*/
+@mixin triangle($width, $config) {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  vertical-align: middle;
+  border: $width solid transparent;
+
+  @each $position,
+  $color in $config {
+    border-#{$position}-color: $color;
+  }
+}
+
+// 背景图
+@mixin background-image($url, $size: 100%, $position: center, $repeat: no-repeat) {
+  background-image: url($url);
+  background-repeat: $repeat;
+  background-size: $size;
+  background-position: $position;
+}
