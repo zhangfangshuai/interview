@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=\, initial-scale=1.0">
+    <title>dynamic-router</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+</head>
+<body>
+    <div id="app">
+        <h3>{{ title }}</h3>
+        <div v-permission-code="RouteCode1">
+            权限1
+        </div>
+        <div v-permission-code="RouteCode2">
+            权限2
+        </div>
+        <div v-permission-code="RouteCode3">
+            权限3
+        </div>
+        <div v-permission-code="RouteCode4">
+            权限4
+        </div>
+        <div v-permission-code="RouteCode5">
+            权限5
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    title: 'dynamic router'
+                }
+            }
+        })
+
+        /**
+         * @func 实现动态路由
+         * @desc 1. 动态自动引入路由子模块
+         */
+        const routerList = []
+        // 下级路由以 xxx.router.js 为规范
+        // require.context 接收三个参数： 1.路径；2. 是否匹配子路由文件； 3. 匹配规则
+        r = require.context('./', true, /\.router\.js/)
+        // 收集所有路由
+        r.keys().forEach(routerList => routerList.concat(r(key).default))
+
+
+        /**
+         * @func 权限控制，动态生成对应路由模块
+         * @desc 理由后台返回的权限列表做判断 
+         */
+
+        // 2.1 假设接口返回权限列表如下
+        const permissionLsit = ['RouteCode1', 'RouteCode2', 'RouteCode3']
+
+        // 2.2 检查权限列表中是否有该元素
+        function permission(key, permissionList) {
+            return permissionList.indexOf(key) > -1
+        }
+
+        // 2.3 自定义指令
+        Vue.directive('permission-code', {
+            inserted(el, binding) {  // 元素插入瞬间执行
+                // console.log(binding)、
+                let displayKey = binding.value
+                if (displayKey) {
+                    let hasPermission = permission(displayKey, permissionLsit)
+                    if (hasPermission) {
+                        el.parentNode && el.parentNode.removeChild(el)
+                    }
+                } else {
+                    throw new Error('need key! Like v-display-key = "displayKey"')
+                }
+            }
+        })
+
+        // 2.4 页面使用
+        // 见html部分
+        
+    </script>
+</body>
+</html>

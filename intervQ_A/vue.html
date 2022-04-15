@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vue</title>
+    <style>
+        code { color: #2C3E50; background: #F3F4F4; padding: 2px 6px; }
+    </style>
+</head>
+<body>
+    <h2>Vue 相关</h2>
+    <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
+    <h3>template 和 render()什么关系</h3>
+    <ol>
+        <li>template是Vue框架设定的一种语法糖，并不是真正的dom节点</li>
+        <li>templte里的内容需要通过render()函数去创建对应的真实dom，再生成虚拟dom，最后转化为真实dom</li>
+        <li>流程是： <code>template => render() => 虚拟dom => 转化为真实dom</code></li>
+    </ol>
+    <h3>render(h)里的h代表什么</h3>
+    <ol>
+        <li>h => 原声JS中的 <code>createElement()</code></li>
+    </ol>
+    <h3>vue-router是如何实现懒加载的</h3>
+    <ol>
+        <li><b>ES6: import方式</b></li>
+        <div>component配置接收一个返回 Promise 组件的函数，Vue Router只会在第一次进入页面时才会获取这个函数，然后使用缓存数据</div>
+        <code>{ path: '/index', component: () => import('@/view/index.vue')}</code><br>
+        <li><b>require方式：异步加载</b></li>
+        <div>组件的异步加载，即为路由的异步加载</div>
+        <code>{ path: '/index', component: resolve => require(['@/view/index.vue'], resolve)</code>
+        <li><b>require方式异步加载 + 分包</b></li>
+        <div>webpack提供的require.ensure()，vue-router配置路由，使用webpack的require.ensure技术，也可以实现按需加载。这种情况下，多个路由指定相同的chunkName，会合并打包成一个js文件。</div>
+        <code>{ path: '/index', component: r => require.ensure([], () => r(request('@/view/index.vue')), 'chunkName')</code>
+        <li><b>import按需加载 + 分包（Vue官方推荐）</b></li>
+        <div>如果你使用的是 webpack, 则可以在方案一的基础上，添加分包功能</div>
+        <code>{ path: '/index', component: () => import(/* webpackChunkName: "group-user" */ '.@/view/index.vue')</code>
+        <div>其中：<code>/* webpackChunkName: "group-user"</code> 就是实现分包的作用</div>
+    </ol>
+</body>
+</html>

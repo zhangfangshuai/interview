@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>virtual dom</title>
+</head>
+<body>
+    <h3>1. 虚拟dom是什么</h3>
+    <ul>
+        <li>vue2.x才有虚拟dom</li>
+        <li>它本质就是一个js对象</li>
+    </ul>
+
+    <h3>2. Vue的虚拟dom做了什么</h3>
+    <ul>
+        <li>vue的渲染过程: 
+            <p>.vue 文件只是在vue框架下的语法糖, 本质上还是会通过虚拟dom来转化成浏览器认识的（html,css,js）虚拟dom所做的正是这个过程</p>
+        </li>
+        <b>渲染线路1: 初始渲染</b>
+        <ol>
+            <li>对.vue文件的模板template内容通过render()函数转换为真实dom，同时创建一个虚拟dom（JS对象） </li><small>这里要将真实dom转成虚拟dom，又将虚拟dom转成真实dom的原因是为了构造虚拟dom，以便后续更新时的代价更低</small>
+            <li>通过虚拟dom处理逻辑(patch.js)将虚拟dom转换为真实dom</li>
+            <li>将真实dom渲染到浏览器上</li>
+        </ol>
+        <br />
+        <b>渲染线路2: 更新渲染，update变化的节点</b>
+        <ol>
+            <li>通过patch.js里的初始化方法对比对比新旧两次虚拟dom(js对象)的内容，找出变更的节点</li>
+            <li>通过patch.js里的update方法，更新虚拟dom节点</li>
+            <li>通过虚拟dom生成真实dom，渲染到页面上</li>
+        </ol>
+    </ul>
+
+    <h3>3. 虚拟dom时如何提升vue的渲染效率的？</h3>
+    <!-- vue特性：组件化、数据驱动 -->
+    <ul>
+        <li>通过对比两个虚拟dom，找到变化的节点，无需销毁整个父级元素，做到了局部更新</li>
+        <li>将直接操作dom的地方，改成对两个js对象进行对比，找到差异项再更新dom，大大减少了dom的操作。</li>
+    </ul>
+
+    <h3>4. vue的diff算法里，是如何将虚拟dom转化为真实dom的</h3>
+    <ul>
+        <li>该问题是在问diff算法里的patch算法执行逻辑和update路基。参见js部分</li>
+    </ul>
+
+    <script>
+        /**
+         * @func diff算法中的patch方法执行逻辑。
+         * @desc 初始渲染： create(container, vnode)
+         * @desc 更新渲染： update(vnode, newVnode)
+         * @desc 虚拟dom组成三要素：目标元素标签、目标元素属性、目标元素子元素
+         */
+
+        //  create，初始渲染创建真实dom
+        function createElement(vnode) {
+            let tag = vnode.tag   // 目标元素标签
+            let attrs = vnode.attrs || {}   // 目标元素属性
+            let children = vnode.children || []   // 目标元素子元素
+
+            if (!target) return null
+
+            // 1.创建元素
+            let elem = document.createElement(tag)
+            // 2.创建属性
+            let attrKey
+            for (attrKey in attrs) {
+                if (attrs.hasOwnProperty(attrKey)) {
+                    elem.setAttribute(attrKey, attrs[attrKey] )
+                }
+            }
+            // 3.创建子元素
+            children.forEach((childVnode) => {
+                elem.appendChildren(createElement(childVnode))
+            })
+        }
+
+        // update：更新子节点
+        function updateChildren(vnode, newVnode) {
+            let children = vnode.children || []
+            let newChildren = newVnode.children || []
+            children.forEach((childVnode, index) => {
+                let newChildVnode = newChildren[index]
+                // 对比新旧节点的目标元素标签是否一致，一致表示没更新.
+                if (childVnode.tag === newChildVnode.tag) {
+                    // 第一层没变化，继续检查内部子节点
+                    updateChildren(childVnode, newChildVnode)
+                } else {
+                    replaceNode() // diff算法提供的其他方法
+                }
+            })
+        }
+    </script>
+</body>
+</html>

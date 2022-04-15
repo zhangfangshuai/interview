@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vue-render</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <style>
+        code { color: #2C3E50; background: #F3F4F4; padding: 2px 6px; }
+        .btn { font-size: 13px; color: #111 }
+        .btn-success { background: green }
+        .btn-error { background: red }
+    </style>
+</head>
+<body>
+    <h2>render()</h2>
+    <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
+    <h3>template 和 render()什么关系</h3>
+    <ol>
+        <li>template是Vue框架设定的一种语法糖，并不是真正的dom节点</li>
+        <li>templte里的内容需要通过render()函数去创建对应的真实dom，再生成虚拟dom，最后转化为真实dom</li>
+        <li>流程是： <code>template => render() => 虚拟dom => 转化为真实dom</code></li>
+    </ol>
+    <h3>render(h)里的h代表什么</h3>
+    <ol>
+        <li>h => 原声JS中的 <code>createElement()</code></li>
+    </ol>
+
+    <br>
+    <h3>实现一个render函数</h3>
+    <div>查看以下案例，当v-if的枚举值多时，template将变得非常累赘，此时，使用render来实现更为简单</div>
+    <div id="vue_app">
+        <div v-if="value === 1">
+            <button>按钮一</button>
+        </div>
+        <div v-else-if="value === 2">
+            <button>按钮二</button>
+        </div>
+        <div v-else>
+            <button>按钮三</button>
+        </div>
+        <!-- 这里不能引用，本文为了岩石，把两个vue写一起 -->
+        <!-- <Button text="成功按钮" type="success"></Button> -->
+    </div>
+
+    <div id="vue_app_button">
+    </div>
+    <script>
+        // 实现一个render函数
+        let APP = new Vue({
+            el: '#vue_app',
+            // components: { Button },
+            data() {
+                return {
+                    value: 1
+                }
+            }
+        })
+
+        let Button = new Vue({
+            el: '#vue_app_button',
+            props: {
+                type: {
+                    type: String,
+                    default: 'normal'
+                },
+                text: {
+                    type: String,
+                    default: '默认按钮'
+                }
+            },
+            render(h) {
+                return h('button', {
+                    // v-bind:class
+                    class: {
+                        btn: true,
+                        'btn-success': this.type === 'success',
+                        'btn-error': this.type === 'error'
+                    },
+                    // dom属性
+                    domProps: {
+                        innerText: this.text || '默认按钮'
+                    },
+                    // 事件 v-on:click
+                    on: {}
+                })
+            }
+        })
+    </script>
+</body>
+</html>

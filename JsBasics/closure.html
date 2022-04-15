@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>study-closure</title>
+</head>
+
+<body>
+    <h2>闭包</h2>
+    <script>
+        /**
+         * @func 闭包是什么？ 
+         * @desc 字面意思；函数中返回函数。
+         * @desc 民间说法：沟通内外部方法的桥梁(见下方)
+         */
+        function fn() {
+            let name = 'zfs'
+            return function() {
+                console.log(name)
+            }
+        }
+
+        /**
+         * @func 作用域空间
+         * @desc 外部无法访问私有作用域内的方法和属性
+         */
+        let user = 'zfs'    // user是全局变量，它保存在全局作用域的Script属性里面，是全局可访问的。
+        function scope() {
+            let height = '177'  // height是局部变量，它保存在全局作用域的Local属性里面，是局部可访问的。
+            console.log(user)   // zfs     
+        }
+        scope() // 此时该方法的this指向window，因为该方法定义在window里调用
+        // console.log(height)     // undefined
+        
+
+        /**
+         * @func 活动对象：AO（Active Object）：计算机用来决定可访问变量的策略
+         * @desc 用于存储运行时的方法及局部变量。（注全局变量不会存储在AO中）
+         * @desc 只有当前可以被访问的方法和局部变量才会被储存到AO中，当方法执行完成，属于该方法的局部变量也会在AO中销毁，因此外部无法访问该方法的局部变量
+         * @desc 当变量被AO剔除时，就会被GC回收
+         * @desc 全局变量不会被GC回收，会永久存在内存当中（Script属性里），因此他会污染其他局部变量，也因此不建议定义全局变量
+         */
+
+
+        /**
+         * @func 作用域链
+         * @desc 多层作用域在查找变量时，会从自身沿着作用域链一层一层的往上查找，找到即停止（就近原则）
+         */
+        let color = 'white'
+        function fn1() {
+            let color = 'blue'
+            function fn2() {
+                let color = 'red'
+                console.log(color)   // red
+            }
+            fn2()
+        }
+        fn1()
+
+
+        /**
+         * @func 闭包
+         * @desc 沟通内外部方法的桥梁
+         */
+        function outer() {  // 外部方法
+            let name = 'zfs'
+            let height = '177'
+            return function inner() {  // 内部方法
+                return name
+            }
+        }
+
+        function fn3() {
+            let getInnerData = outer()
+            console.dir(getInnerData)    // f inner()  它的全局作用域Script属性里会有 { user: 'zfs', color: 'white' }，这是因为上面代码第30行和第50行定义了全局变量导致，因此说全局变量会污染其他局部作用域的原因就在这
+        }                                // 除Script作用域外，还有一个Closure作用域即闭包：它包含了 { name: 'zfs' }，是通过outer的内部方法inner return而来
+        fn3()
+
+        /**
+         * @func 闭包作用1：闭包会延长变量的生命周期
+         * @desc 通过以上案例可知，闭包会使变量常驻在内存中，就像全局变量一样，因此需要慎用（但他不会污染其他局部变量）
+         * @desc 闭包里的变量用完后，可以手动回收，如清空
+         */
+
+
+        /**
+         * @func 闭包作用2: 创建一个私有作用域
+         *
+         * 案例1
+         * @question 【面试题】Vue中的 data() 为什么是一个函数？
+         * @answer Vue中的data是通过闭包实现的一个私有作用域空间，保证不同组件之间的data相互独立不干扰。
+         */
+        //  data() {
+        //      return {
+        //          name: 'zfs'
+        //      }
+        //  }
+
+        /**
+         * 案例2
+         * @desc 创建一个计数器 
+         */
+        function makeCounter() {
+            let count = 0
+            function changeBy(num) {
+                count += num
+            }
+            // 外部无法访问count和changeBy，我return什么，外部才能用什么，这很好的保护的内部的属性和方法
+            return {
+                add: function() {
+                    changeBy(1)
+                },
+                reduce: function() {
+                    changeBy(-1)
+                },
+                value: function() {
+                    return num
+                }
+            }
+        }
+
+        let counter1 = makeCounter()
+        let counter2 = makeCounter()
+
+        console.log(counter1.value())
+        counter1.add()
+        counter1.add()
+        counter2.add()
+        console.log(counter1.value())  // 2
+        console.log(counter2.value())  // 1
+
+        // explain： 两个计数器都是通过闭包来生成，他们拥有自己的词法环境，且互相独立不干扰。
+        // 即：counter1里的属性和方法是它所私有的，所以当我们去改变它时，counter2是不受影响的。
+        // 形象化比喻：counter1和counter2虽然都是同一个爹makeCounter生成，但它们都用自己的家庭（词法环境）
+        
+        // 闭包 诠释了面向对象编程的好处：数据的隐藏和封装。
+    </script>
+</body>
+
+</html>
