@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>贪吃蛇</title>
+    <style>
+        .home {
+            width: 80%;
+            height: 400px;
+            border: 1px solid orange;
+        }
+    </style>
+</head>
+<body>
+    <!-- 游戏容器 -->
+    <div id="map" class="home"></div>
+    <br>
+    <!-- 选择模式 -->
+    <button onclick="changeMode(400)">简单模式</button>
+    <button onclick="changeMode(200)">一般模式</button>
+    <button onclick="changeMode(100)">困难模式</button>
+    <button onclick="changeMode(50)">炼狱模式</button>
+
+    <script>
+        /**
+         * @func 贪吃蛇
+         */
+        // random函数
+        function getRandom(a, b) {
+            let max = Math.max(a, b)
+            let min = Math.min(a, b)
+
+            return parseInt(Math.random() * (max - min)) + min            
+        }
+
+        // 定义【食物类】
+        class Food {
+            // 构造器 => 数据初始化
+            constructor({ x = 0, y = 0, width = 20, height = 20, color = 'green' } = {}) {
+                // 接收外部传入的值，对数据进行初始化
+                this.elements = []
+                this.x = x
+                this.y = y
+                this.width = width
+                this.height = height
+                this.color = color
+            }
+            // 生成新事物
+            render() {
+                this.remove() // 先删除旧（被吃掉）的食物
+                this.x = getRandom(0, map.offsetWidth / this.width - 10) * this.width
+                this.y = getRandom(0, map.offsetHeight / this.height - 1) * this.height
+
+                let div = document.createElement('div')
+                map.appendChild(div)
+
+                this.elements.push(div)
+
+                // 设置事物div小方块的样式
+                div.style.position = 'absolute'
+                div.style.left = this.x + 'px'
+                div.style.top = this.y + 'px'
+                div.style.width = this.width + 'px'
+                div.style.height = this.height + 'px'
+                div.style.backgroundColor = this.color
+                div.style.borderRadius = '50%'
+            }
+
+            remove() {
+                for (let i = this.elements.length - 1; i >= 0; i --) {
+                    // 删除真实dom
+                    this.elements[i].parentNode.removeChild(this.elements[i])
+                    // 删除数组
+                    this.elements.splice(i, 1)
+                }
+            }
+        }
+
+        // 定义贪吃蛇  蛇类
+        class Snake {
+            constructor({ width = 20, height= 20, direction = 'right' } = {}) {
+                this.elements = [] // 蛇每吃一个食物，本质都是生成一条新的蛇
+                this.width = width
+                this.height = height
+                this.direction = direction // 蛇的移动方向
+
+                // 蛇的身体。 蛇出现的初始位置
+                this.body = [
+                    { x: 3, y: 2, color: 'red' },
+                    { x: 2, y: 2, color: 'blue' },
+                    { x: 1, y: 2, color: 'blue' }
+                ]
+            }
+
+            // 蛇每走一步，都先删除老蛇，在下一步新生成一条蛇
+            render(map) {
+                this.remove() // 删除老蛇
+                
+                // 渲染蛇的身体
+                for(let i = 0, len = this.body.length; i < len; i++) {
+                    let object = this.body[i]
+                    let div = document.createElement('div')
+                    map.appendChild(div)
+
+                    this.elements.push(div)
+
+                    // 设置样式
+                    div.style.position = 'absolute'
+                    div.style.width = this.width + 'px'
+                    div.style.height = this.height + 'px'
+                    div.style.left = object.x * this.width + 'px'
+                    div.style.top = object.y * this.height + 'px'
+                    div.style.backgroundColor = object.color
+                }
+            }
+
+            // 删除老蛇
+            remove() {
+                for (let i = this.elements.length - 1; i >= 0; i--) {
+                    // 删除div
+                    this.elements[i].parentNode.removeChild(this.elements[i])
+                    // 删除数组中的元素
+                    this.elements.splice(i, 1)
+                }
+            }
+
+            // 蛇的移动
+            move(food, map) {
+                // 设置非蛇头的蛇节移动
+                for(let i = this.body.length - 1; i > 0; i--) {
+                    this.body[i].x = this.body[i - 1].x
+                    this.body[i].y = this.body[i - 1].y
+                }
+                // 获取蛇头的位置
+                let head = this.body[0]
+                // 移动的方向
+                switch (this.direction) {
+                    case 'right':
+                        head.x += 1
+                        break;
+                    case 'left':
+                        head.x -= 1
+                        break;
+                    case 'top':
+                        head.y -= 1
+                        break;
+                    case 'bottom':
+                        head.y += 1
+                }
+
+                // 蛇吃到食物
+                let headX = head.x * this.width
+                let headY = head.y * this.height
+                // 当蛇头位置和食物位置重叠时表示吃到了食物
+                if (headX === food.x && headY === food.y) {
+                    let last = this.body[this.body.length - 1]
+                    // 蛇身加一
+                    this.body.push({
+                        x: last.x,
+                        y: last.y,
+                        color: last.color
+                    })
+                    food.render(map)  // 重新生成食物
+                }
+            }
+
+            length() {
+                return this.body.length
+            }
+        }
+
+        // 定义【游戏】类，将蛇类和食物类关联起来
+        class Game {
+            constructor() {
+                this.food = new Food()
+                this.snake = new Snake()
+
+                this.map = map
+                this.snake.render(this.map)
+            }
+
+            // 开始游戏
+            start(speed) {
+                this.food.render(this.map)
+                this.snake.render(this.map)
+
+                this.runSnake(speed) // 游戏开始，让蛇动起来
+                this.bindKey() // 游戏开始，监听用户行为
+            }
+
+            end() {
+                clearInterval(this.timerId)
+                this.food.remove()
+                this.snake.remove()
+                this.unbindKey()
+            }
+
+            // 监听玩家方向控制
+            bindKey() {
+                document.addEventListener('keydown', e => {
+                    // 蛇不允许反向游动
+                    switch (e.keyCode) {
+                        case 37:
+                            if (['right', 'left'].indexOf(this.snake.direction) < 0) {
+                                this.snake.direction = 'left'
+                            }
+                            break;
+                        case 38:
+                            if (['bottom', 'top'].indexOf(this.snake.direction) < 0) {
+                                this.snake.direction = 'top'
+                            }
+                            break;
+                        case 39:
+                            if (['right', 'left'].indexOf(this.snake.direction) < 0) {
+                                this.snake.direction = 'right'
+                            }
+                            break;
+                        case 40:
+                            if (['bottom', 'top'].indexOf(this.snake.direction) < 0) {
+                                this.snake.direction = 'bottom'
+                            }
+                            break;
+                    }
+                })
+            }
+            // 游戏结束，取消监听
+            unbindKey() {
+                document.removeEventListener('keydown', () => {})
+            }
+
+            // 让蛇动起来，并检测游戏结束
+            runSnake(speed = 200) {
+                this.timerId = setInterval(() => {
+                    this.snake.move(this.food, this.map)
+                    // 碰撞检测
+                    let maxX = this.map.offsetWidth / this.snake.width
+                    let maxY = this.map.offsetHeight / this.snake.height
+                    let headX = this.snake.body[0].x
+                    let headY = this.snake.body[0].y
+
+                    if (headX < 0 || headX >= maxX || headY < 0 || headY >= maxY) {
+                        alert(`Game over! \nScore: ${this.snake.length() - 3}`)
+                        clearInterval(this.timerId)
+                        this.unbindKey()
+                        return
+                    }
+                    this.snake.render(this.map)
+                }, speed)
+            }
+        }
+
+        // 获取游戏区域
+        let map = document.getElementById('map')
+        let game = new Game()
+
+        // 创建并开始游戏
+        function changeMode(speed) {
+            game.end()
+            game.start(speed)
+        }
+    </script>
+</body>
+</html>
