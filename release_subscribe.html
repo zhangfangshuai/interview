@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>release_subscribe</title>
+</head>
+<body>
+    <h3>发布订阅模式</h3>
+
+    <script>
+        /**
+         * @func 单页面单发布者模型
+         */
+
+        let releaser = {};  // 发布者
+        releaser.events = {}; // 发布者事件存储器，不同事件区分key存储。这里不要用数组存储，否则赋值时key被当做下标，做深拷贝。二对象不会
+
+        /**
+         * @func 订阅函数的添加方法
+         * @param key 事件类别,识别码
+         * @param fn 事件
+         */
+        releaser.listen = function(key, fn) {
+            if (!this.events[key]) {
+                this.events[key] = []
+            }
+            this.events[key].push(fn)
+        }
+
+        /**
+         * @func 发布者的发布方法：当发布者发布函数，触发订阅函数执行
+         * @param {Object} arguments: {key, fn}
+         */
+        releaser.trigger = function() {
+            const [ key, ...args ] = arguments || {} // es6
+            // call-方法执行时使用指定数据对象环境进行执行
+            // let key = Array.prototype.shift.call(arguments) // Es5-注意shift改变了原数组
+            let events = this.events[key]
+
+            if (!events || events.length === 0) return
+
+            for ( let fn of events ) {
+                fn.apply(this, args); // apply-方法执行时，将this指向指定环境中
+            }
+        }
+
+        // 订阅者A订阅事件eType1，当发布者发布此事件时，执行订阅事件
+        releaser.listen('eType1', function(eName) {
+            console.log('订阅者A订阅了类型1的事件:', eName)
+        })
+
+        // 订阅者B订阅事件eType2
+        releaser.listen('eType2', function(eName) {
+            console.log('订阅者B订阅了类型2的事件:', eName)
+        })
+
+        // 发布者发布消息
+        releaser.trigger('eType1', '发布者发布了类型1的消息')
+        releaser.trigger('eType2', '发布者发布了类型2的消息')
+
+
+
+
+
+
+
+
+        /**
+         * @func 高内聚，低耦合模型 - 推荐
+         * @desc 将发布者全局化，解耦订阅者与发布者互相感知的关系,并且，订阅者并不关心订阅事件有多少
+         * @desc 将发布函数、订阅函数的添加方法聚合在发布者内部，订阅者不需要关心整个事件订阅过程，只需要使用全局发布者的方法即可
+         * @param {Object} events 事件存储容器
+         * @param {Function} listen 添加订阅函数的方法
+         * @param {Function} trigger 发布者触发订阅函数执行的方法
+         * @param {Function} remove 移除某个订阅函数的方法
+         */
+        let Event = (function() {
+            // events 不用数组存储，原因是数组存储key时会被当做下标处理，在trigger赋值时会做深拷贝，浪费性能
+            let events = {}, listen, trigger, remove;
+
+            listen = function (key, fn) {
+                (events[key] || (events[key] = [])).push(fn)
+            };
+
+            trigger = function() {
+                let [key, ...args] = arguments, fns = events[key];
+                // let key = Array.prototype.shift.call(arguments)  // Es5-下方改成fn.apply(this, arguments)
+                if (!fns || fns.length === 0) return
+
+                for (let fn of fns) {
+                    fn.apply(this, args)
+                }
+            };
+
+            // 只传key表示清楚key下所有事件，传了key和fn，表示清除key下的fn事件
+            remove = function(key, fn) {
+                let fns = events[key]
+                if (!fns) return
+                if (!fn) {
+                    fns.length = 0
+                } else {
+                    // 从后往前遍历删除
+                    for (let i = fns.length - 1; i >= 0; i--) {
+                        let _fn = fns[i]
+                        _fn === fn && (fn.splice(i, 1))
+                    }
+                }
+            };
+
+            // 使用闭包导出，数据(如list)都是内部的，不受外部干扰很安全
+            return {
+                listen,
+                trigger,
+                remove
+            }
+        })();
+
+
+        // 使用
+        // 订阅者订阅事件
+        Event.listen('event1', function(event) {
+            console.log('订阅者订阅事件event1: ', event)
+        })
+
+        // 发布者发布事件，传达给订阅者
+        Event.trigger('event1', '发布者发布event1事件了')
+    </script>
+</body>
+</html>
