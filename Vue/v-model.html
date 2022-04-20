@@ -26,14 +26,53 @@
 
 
 
-    <h3>v-model 手写原理</h3>
-    <!-- 双向数据绑定原理 -->
+    <h3>v-model 手写案例</h3>
     <input id="username" placeholder="请输入" />
     <div>双向绑定显示值：<span id="uName"></span></div>
 
     <script>
         /**
-         * @func 双向数据绑定的实现原理 
+         * @func Object.defineProperty()方法理解
+         * @desc 用户给对象定一个新属性，或修改一个现有属性的值或其他描述，并返回此对象
+         */
+        const object1 = {}
+        Object.defineProperty(object1, 'property1', {
+            configurable: false, // 对象属性能否被删除，其他描述符是否可被改变 - 默认false
+            enumerable: true, // 是否可被枚举出来, 如 for...in, Object.keys()等 - 默认false。
+            writable: false, // 不可写入 - 默认false
+            value: 42, // 值 - 默认undefined
+            // 属性的getter方法，当该属性被读取时，调用此函数 - 默认undefined
+            get() { 
+                return this.value
+            },
+            // 属性的setter方法，当属性值被设置或修改时，调用此函数 - 默认undefined
+            set(newVal) {
+                this.value = newVal
+                console.log(newVal, this)
+            }
+        })
+        object1.value = 77
+        console.log(object1.value) // 42
+        delete object1.property1 // 不执行任何逻辑，因为configurable未false
+        
+        // 普通的执行赋值，等同于描述符都为true
+        object1.b = 2
+        // 等同于
+        Object.defineProperty(object1, 'b', {
+            configurable: true,
+            enumerable: true,
+            writable: true,
+            value: 2
+        })
+
+        // 继承属性，原型属性 prototype 上的属性是会被继承的
+        Object.defineProperty(Object1.prototype, 'x', {})
+
+
+
+
+        /**
+         * @func 使用Object.defineProperty 实现双向数据绑定的简单案例
          * 1、监听input的keyup事件的发生
          * 2、keyup发生，导致input内容改变，修改obj的属性的值
          * 3、通过defineProperty劫持你对对象obj的操作，属性值的改变
@@ -55,6 +94,61 @@
             person.username = event.target.value
         })
 
+
+
+
+        /**
+         * @func vue实现双向数据绑定核心原理 
+         * @desc vue2.x
+         */
+        let data = { msg: 'vue2', count: 10 },
+            vm = {}
+        proxyData()
+        // 双线个数据绑定实现原理
+        function proxyData(data) {
+            Object.keys(data).forEach(key => {
+                Object.defineProperty(vm, key, {
+                    configurable: true,
+                    enumerable: true,
+                    writable: true,
+                    get() {
+                        return data[key]
+                    },
+                    set(newVal) {
+                        data[key] = newVal
+                        document.querySelector('#app').textContent = data[key]
+                    }
+                })
+            })
+        }
+        vm.msg   // vue2, 访问次属性，调用getter方法，打印data.msg
+        vm.msg = 'hello vue3'  // 设置新属性，调用setter方法，并渲染到页面上
+        vm.msg   // hello vue3
+
+
+
+
+        /**
+         * @func vue实现双向数据绑定原理
+         * @desc vue3.x
+         */
+        let obj = { msg: 'vue3', count: 0 }
+        let vm = new Proxy(obj, { // 执行代理行为的函数
+            get(target, key) {
+                return target[key]
+            },
+            set(target, key, value) {
+                if (target[key] === newValue) return
+                target[key] = newValue
+                document.querySelector('#app').textContent = target[key]
+            }
+        })
+
+
+        /**
+         * @desc defineProperty 与 proxy 区别 
+         */
+        // vue3.X中的响应式原理是基于Proxy,直接监听对象,而非属性,ES6中新增,IE不支持,性能由浏览器优化,性能比defineProperty要好,代码的话相比较defineProperty要简洁一些,对于多个属性的值不需要进行循环遍历处理。
     </script>
 </body>
 </html>
