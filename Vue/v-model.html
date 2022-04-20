@@ -131,6 +131,7 @@
         /**
          * @func vue实现双向数据绑定原理
          * @desc vue3.x
+         * @desc 与vue2区别：直接监听对象,而非属性,ES6中新增,IE不支持,性能由浏览器优化比defineProperty要好, 对于多个属性的值不需要进行循环遍历处理
          */
         let obj = { msg: 'vue3', count: 0 }
         let vm = new Proxy(obj, { // 执行代理行为的函数
@@ -144,11 +145,6 @@
             }
         })
 
-
-        /**
-         * @desc defineProperty 与 proxy 区别 
-         */
-        // vue3.X中的响应式原理是基于Proxy,直接监听对象,而非属性,ES6中新增,IE不支持,性能由浏览器优化,性能比defineProperty要好,代码的话相比较defineProperty要简洁一些,对于多个属性的值不需要进行循环遍历处理。
     </script>
 </body>
 </html>
