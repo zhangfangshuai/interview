@@ -67,6 +67,138 @@
 
 
 
+
+
+
+
+
+
+        /**
+         * @func 抽象出实例，需要时就new一个发布-订阅着
+         */
+        let RelSubModule = {
+            // 事件池
+            events: {},
+            // 添加订阅者
+            listen: function(key, fn) {
+                (this.events[key] || (this.events[key] = [])).push(fn)
+            },
+            // 发布者发布消息函数
+            trigger: function() {
+                // const [key, ...args] = arguments // Es6
+                let key = Array.prototype.shift.call(arguments), // es5
+                    fns = this.events[key]
+                if (!fns || fns.length === 0) return
+
+                for (let fn of fns) {
+                    fn.apply(this, arguments)
+                }
+            },
+            // 移除某条消息
+            remove(key, fn) {
+                let fns = this.events[key]
+                if (!fns || fns.length === 0) return
+                // 如果没传指定事件，只传了事件类型，则移除整个事件类型下的所有事件
+                if (!fn) {
+                    fns === []
+                } else {
+                    // 数组删除
+                    for (let i = fns.length - 1; i >= 0; i--) {
+                        let _fn = fns[i]
+                        _fn === fn && (fns.splice(i, 1))
+                        break
+                    }
+                }
+            }
+        }
+
+        // 使用
+        let eventObj = {}
+        Object.keys(RelSubModule).forEach(key => eventObj[key] = RelSubModule[key])
+
+        // 添加订阅
+        eventObj.listen('e1', function(releaseMsg) {
+            console.log('事件类型e1订阅了消息: ', releaseMsg)
+        })
+
+
+        eventObj.trigger('e1', '发布事件e1')
+
+
+
+
+
+
+
+
+        /**
+         * @func 构造函数策略 
+         */
+        function ReleaseSubscribeModule() {
+            // 事件池
+            this.events = {}
+        }
+        // 添加订阅函数
+        ReleaseSubscribeModule.prototype.subscribe = function(key, fn) {
+            (this.events[key] || (this.events[key] = [])).push(fn)
+        }
+        // 添加发布函数
+        ReleaseSubscribeModule.prototype.release = function() {
+            let [key, ...args] = arguments,
+                fns = this.events[key];
+            if (!fns || fns.length === 0) return
+
+            for (let fn of fns) {
+                fn.apply(this, args)
+            }
+        }
+        // 移除订阅事件
+        ReleaseSubscribeModule.prototype.remove = function(key, fn) {
+            let fns = this.events[key]
+            if (!fns || fns.length === 0) return
+            // 未传入指定函数，表示清空整个事件类别
+            if (!fn) {
+                fns = []
+            } else {
+                // 移除指定事件
+                for (let i = fns.length - 1; i >= 0; i--) {
+                    let _fn = fn[i]
+                    _fn === fn && (fns.splice(i, 1))
+                }
+            }
+        }
+
+
+        // 使用
+        let eObj = new ReleaseSubscribeModule()
+
+        eObj.subscribe('e1', function(name) {
+            console.log('user1 subscribe e1 event: ', name)
+        })
+
+        eObj.release('e1', 'release e1 event')
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+
+
         /**
          * @func 高内聚，低耦合模型 - 推荐
          * @desc 将发布者全局化，解耦订阅者与发布者互相感知的关系,并且，订阅者并不关心订阅事件有多少
