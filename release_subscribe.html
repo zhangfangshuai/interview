@@ -74,7 +74,7 @@
 
 
         /**
-         * @func 抽象出实例，需要时就new一个发布-订阅着
+         * @func 使用对象，将函数和方法抽象到对象属性
          */
         let RelSubModule = {
             // 事件池
@@ -121,9 +121,14 @@
             console.log('事件类型e1订阅了消息: ', releaseMsg)
         })
 
-
         eventObj.trigger('e1', '发布事件e1')
 
+
+
+
+
+
+        
 
 
 
