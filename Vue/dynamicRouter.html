@@ -10,6 +10,13 @@
 <body>
     <div id="app">
         <h3>{{ title }}</h3>
+        <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
+        <p>实现动态路由主要需要实现两点：</p>
+        <ul>
+            <li>实现路由的拆分，将对应模块的路由配置分散到各个子文件上，如 part1.router.js， 通过webpack 的 require.context聚合</li>
+            <li>与服务端设计每个路由的code识别码，用于根据权限列表返回，动态识取有权限的路由与子路由</li>
+        </ul>
+        <br>
         <div v-permission-code="RouteCode1">权限1</div>
         <div v-permission-code="RouteCode2">权限2</div>
         <div v-permission-code="RouteCode3">权限3</div>

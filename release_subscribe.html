@@ -8,10 +8,92 @@
 </head>
 <body>
     <h3>发布订阅模式</h3>
+    <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
 
+    <li>什么是闭包？</li>
+    <br>
+    <li>什么是原型，什么是原型链，原型链的等号命令语句是什么？</li>
+    <br>
+    <li>什么是发布订阅模式？</li>
+    <br>
+    <li>什么是观察者模式？</li>
+    <br>
+    <li>事件监听 target.addEventListener('click', fn, false)</li>
     <script>
         /**
-         * @func 单页面单发布者模型
+         * @func 事件监听是我们常用的发布-订阅者模式 
+         * @desc 第三个参数可以指定如下几个值
+         * 1）capture:true, 在事件捕获阶段触发；
+         * 2）once:true, 只触发一次；
+         * 3）false/true - 沿着dom树冒泡上来的时间是否需要触发本监听
+         * 4）其他不常用
+         */
+        target.addEventListener('click', function() {
+            console.log('user click here')
+        }, false)
+
+
+
+
+
+
+
+        /**
+         * @func 观察者模式：观察者观察发布者是否发布消息，发布了消息，执行事件
+         * @desc 定义： 发布者，观察者
+         * @desc 使用： 1）发布者添加观察者，2）发布消息，3）观察者执行事件
+         */
+
+        // 发布者
+        class Releaser {
+            constructor() {
+                this.watcherHub = {}
+            }
+
+            // 添加观察者
+            addWatcher(key, watcher) {
+                if (!key) return
+                if (watcher && watcher.update) {
+                    (this.watcherHub[key] || (this.watcherHub[key] = [])).push(watcher)
+                }
+            }
+
+            // 发布通知
+            notify(key, msg) {
+                [].forEach.call(this.watcherHub[key], function(watcher) {
+                    watcher.update.call(this, msg)
+                })
+            }
+        }
+
+        // 观察者
+        class Watcher {
+            constructor() {}
+            update(msg) {
+                console.log('观察者观察消息：', msg)
+            }
+        }
+
+        /* ------------ 使用 ------------- */
+        // 1）初始化
+        let w1 = new Watcher()
+        let r1 = new Releaser()
+        // 2）添加观察者
+        r1.addWatcher('warning', w1)
+        // 3）发布消息
+        r1.notify('warning', '我捡到了100w')
+
+
+
+
+
+
+
+        /* -------- 实现发布订阅者模式的四种思路 ---------- */
+
+
+        /**
+         * @func 单页面单发布者模型 - 基础实现
          */
 
         let releaser = {};  // 发布者
@@ -74,7 +156,7 @@
 
 
         /**
-         * @func 使用对象，将函数和方法抽象到对象属性
+         * @func 创造模板，利用拷贝生成实例。将函数和方法抽象到对象属性 - 利用对象载体
          */
         let RelSubModule = {
             // 事件池
@@ -100,12 +182,12 @@
                 if (!fns || fns.length === 0) return
                 // 如果没传指定事件，只传了事件类型，则移除整个事件类型下的所有事件
                 if (!fn) {
-                    fns === []
+                    this.events[key] === []
                 } else {
                     // 数组删除
                     for (let i = fns.length - 1; i >= 0; i--) {
                         let _fn = fns[i]
-                        _fn === fn && (fns.splice(i, 1))
+                        _fn === fn && (this.events[key].splice(i, 1))
                         break
                     }
                 }
@@ -128,7 +210,7 @@
 
 
 
-        
+
 
 
 
@@ -137,51 +219,58 @@
 
 
         /**
-         * @func 构造函数策略 
+         * @func 发布-订阅模式
+         * @desc 理解：如微信订阅号： 发布者发布消息，通过微信订阅平台，将消息推送给订阅者；又如淘宝平台，商家在淘宝上新货，淘宝推送商品给顾客
+         * @desc 成员：发布者、订阅者、事件中心(中介)
+         * @desc 使用：发布者发布消息，事件中心存储消息，事件中心推送消息，订阅者执行订阅事件
          */
-        function ReleaseSubscribeModule() {
-            // 事件池
-            this.events = {}
+        let ReleaseSubscribeModule = function() {
+            // 事件中心
+            this.eventHub = {}
         }
-        // 添加订阅函数
-        ReleaseSubscribeModule.prototype.subscribe = function(key, fn) {
-            (this.events[key] || (this.events[key] = [])).push(fn)
-        }
-        // 添加发布函数
-        ReleaseSubscribeModule.prototype.release = function() {
-            let [key, ...args] = arguments,
-                fns = this.events[key];
-            if (!fns || fns.length === 0) return
 
-            for (let fn of fns) {
-                fn.apply(this, args)
-            }
-        }
-        // 移除订阅事件
-        ReleaseSubscribeModule.prototype.remove = function(key, fn) {
-            let fns = this.events[key]
-            if (!fns || fns.length === 0) return
-            // 未传入指定函数，表示清空整个事件类别
-            if (!fn) {
-                fns = []
-            } else {
-                // 移除指定事件
-                for (let i = fns.length - 1; i >= 0; i--) {
-                    let _fn = fn[i]
-                    _fn === fn && (fns.splice(i, 1))
+        ReleaseSubscribeModule.prototype = {
+            // 添加订阅者
+            subscribe(key, fn) {
+                if (!key) {
+                    alert('订阅失败！必须传入事件类别')
+                    return
+                }
+                (this.eventHub[key] || (this.eventHub[key] = [])).push(fn)
+            },
+            // 发布者
+            release() {
+                let key = Array.prototype.shift.call(arguments),
+                    fns = this.eventHub[key]
+                    
+                if (!fns || fns.length === 0) return
+                fns.forEach(fn => {
+                    fn.apply(this, arguments)
+                })
+            },
+            // 取消订阅
+            remove(key, fn) {
+                let fns = this.eventHub[key]
+                if (!fns || fns.length === 0) return
+                if (!fn) {
+                    this.eventHub[key] = []
+                } else {
+                    for (let i = fns.length -1; i >= 0 ; i--) {
+                        let _fn = fns[i]
+                        (_fn === fn) && (this.eventHub[key].splice(i, 1))
+                    }
                 }
             }
         }
 
-
         // 使用
-        let eObj = new ReleaseSubscribeModule()
+        let sample = new ReleaseSubscribeModule()
 
-        eObj.subscribe('e1', function(name) {
-            console.log('user1 subscribe e1 event: ', name)
+        sample.subscribe('e1', function(msg) {
+            console.log('订阅者订阅了E1: ', msg)
         })
 
-        eObj.release('e1', 'release e1 event')
+        sample.release('e1', '发布者发布了e1类型事件')
 
 
 
@@ -200,12 +289,8 @@
 
 
 
-
-
-
-
         /**
-         * @func 高内聚，低耦合模型 - 推荐
+         * @func 高内聚，低耦合模型 - 使用闭包
          * @desc 将发布者全局化，解耦订阅者与发布者互相感知的关系,并且，订阅者并不关心订阅事件有多少
          * @desc 将发布函数、订阅函数的添加方法聚合在发布者内部，订阅者不需要关心整个事件订阅过程，只需要使用全局发布者的方法即可
          * @param {Object} events 事件存储容器

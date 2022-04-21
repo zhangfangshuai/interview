@@ -4,88 +4,127 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>study-template</title>
+    <title>Template-Page</title>
 </head>
 
 <body>
-    <h2>my test page - 手写promise</h2>
+    <h2>Relase-Subscribe-Module - 发布订阅者模式</h2>
+    <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
+    <ul>
+        <li>什么是闭包？</li>
+        <br>
+        <li>什么是原型，什么是原型链，原型链的等号命令语句是什么？</li>
+        <br>
+        <li>什么是发布订阅模式？</li>
+        <br>
+        <li>什么是观察者模式？</li>
+        <br>
+        <li>事件监听 document.addEventListener('click', fn, false)</li>
+    </ul>
     <script>
-        // 正常promise使用
-        let p1 = new Promise((resolve, reject) => {
-            let async_request = true
-            if (async_request) {
-                resolve({ data: 'p1 resolved' })
-            } else {
-                reject({msg: 'p1 rejected'})
+        /**
+         * @func 观察者模式：观察者观察发布者是否发布消息，发布了消息，执行事件
+         * @desc 成员： 发布者，观察者
+         * @desc 使用： 1）发布者添加观察者，2）发布消息，3）观察者执行事件
+         */
+
+        // 发布者
+        class Releaser {
+            constructor() {
+                this.watcherHub = {}
             }
-        })
 
-        p1.then(res => {
-            console.log(res.data)
-        })
-
-
-        // 手写promise
-        // 1. promise是个构造函数
-        function myPromise(callback) {
-            let self = this
-            self.status = 'pending'
-            self.value = null
-            self.reason = null
-
-             self.onFulfilledCallbacks = []
-             self.onRejectedCallbacks = []
-
-            function resolve(value) {
-                if (self.status === 'pending') {
-                    self.value = value
-                    self.status = 'fulfilled'
-
-                    self.onFulfilledCallbacks.forEach(fn => fn(value))
+            // 添加观察者
+            addWatcher(key, watcher) {
+                if (!key) return
+                if (watcher && watcher.update) {
+                    (this.watcherHub[key] || (this.watcherHub[key] = [])).push(watcher)
                 }
             }
 
-            function reject(reason) {
-                if (self.status === 'pending') {
-                    self.reason = reason
-                    self.status = 'rejected'
+            // 发布通知
+            notify(key, msg) {
+                [].forEach.call(this.watcherHub[key], function(watcher) {
+                    watcher.update.call(this, msg)
+                })
+            }
+        }
 
-                    self.onRejectedCallbacks.forEach(fn => fn(reason))
+        // 观察者
+        class Watcher {
+            constructor() {}
+            update(msg) {
+                console.log('观察者观察消息：', msg)
+            }
+        }
+
+        /* ------------ 使用 ------------- */
+        // 1）初始化
+        let w1 = new Watcher()
+        let r1 = new Releaser()
+        // 2）添加观察者
+        r1.addWatcher('warning', w1)
+        // 3）发布消息
+        r1.notify('warning', '我捡到了100w')
+
+
+
+
+
+
+        /**
+         * @func 发布-订阅模式
+         * @desc 理解：如微信订阅号： 发布者发布消息，通过微信订阅平台，将消息推送给订阅者；又如淘宝平台，商家在淘宝上新货，淘宝推送商品给顾客
+         * @desc 成员：发布者、订阅者、事件中心(中介)
+         * @desc 使用：发布者发布消息，事件中心存储消息，事件中心推送消息，订阅者执行订阅事件
+         */
+        let Event = function() {
+            // 事件中心
+            this.eventHub = {}
+        }
+
+        Event.prototype = {
+            // 添加订阅者
+            subscribe(key, fn) {
+                if (!key) {
+                    alert('订阅失败！必须传入事件类别')
+                    return
+                }
+                (this.eventHub[key] || (this.eventHub[key] = [])).push(fn)
+            },
+            // 发布者
+            release() {
+                let key = Array.prototype.shift.call(arguments),
+                    fns = this.eventHub[key]
+                    
+                if (!fns || fns.length === 0) return
+                fns.forEach(fn => {
+                    fn.apply(this, arguments)
+                })
+            },
+            // 取消订阅
+            remove(key, fn) {
+                let fns = this.eventHub[key]
+                if (!fns || fns.length === 0) return
+                if (!fn) {
+                    fns = []
+                } else {
+                    for (let i = fns.length -1; i >= 0 ; i--) {
+                        let _fn = fns[i]
+                        (_fn === fn) && (fns.splice(i, 1))
+                    }
                 }
             }
-
-            // 实例化即执行
-            callback && callback(resolve, reject)
         }
 
-        myPromise.prototype.then = function(onFulfilled, onRejected) {
-            let _this = this
-            onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : (data) => { resolve(data) }
-            onRejected = typeof onRejected === 'function' ? onRejected : err => { throw err }
-    
-            if (_this.status === 'pending') {
-               onFulfilled && _this.onFulfilledCallbacks.push(onFulfilled)
-               onRejected && _this.onRejectedCallbacks.push(onRejected)
-            }
-        }
+        // 使用
+        let sample = new Event()
 
+        sample.subscribe('e1', function(msg) {
+            console.log('订阅者订阅了E1: ', msg)
+        })
 
-        let mp1 = new myPromise((resolve, reject) => {
-            console.log('1000')
-            let ok = true
-            if (ok) {
-                setTimeout(() => {
-                    console.log('进入setTimeout')
-                    resolve({data: 'resolve data _ setTimeout'})
-                }, 1000)
-            } else {
-                reject()
-            }
-        })
-        
-        mp1.then(res => {
-            console.log(6, res)
-        })
+        sample.release('e1', '发布者发布了e1类型事件')
     </script>
 </body>
 </html>
