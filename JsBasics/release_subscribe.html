@@ -9,11 +9,6 @@
 <body>
     <h3>发布订阅模式</h3>
     <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
-
-    <li>什么是闭包？</li>
-    <br>
-    <li>什么是原型，什么是原型链，原型链的等号命令语句是什么？</li>
-    <br>
     <li>什么是发布订阅模式？</li>
     <br>
     <li>什么是观察者模式？</li>
@@ -31,9 +26,6 @@
         target.addEventListener('click', function() {
             console.log('user click here')
         }, false)
-
-
-
 
 
 
@@ -86,11 +78,7 @@
 
 
 
-
-
-
         /* -------- 实现发布订阅者模式的四种思路 ---------- */
-
 
         /**
          * @func 单页面单发布者模型 - 基础实现
@@ -144,17 +132,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
         /**
          * @func 创造模板，利用拷贝生成实例。将函数和方法抽象到对象属性 - 利用对象载体
          */
@@ -204,16 +181,6 @@
         })
 
         eventObj.trigger('e1', '发布事件e1')
-
-
-
-
-
-
-
-
-
-
 
 
 

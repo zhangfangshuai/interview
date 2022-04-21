@@ -12,119 +12,155 @@
     <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
     <ul>
         <li>什么是闭包？</li>
-        <br>
-        <li>什么是原型，什么是原型链，原型链的等号命令语句是什么？</li>
-        <br>
-        <li>什么是发布订阅模式？</li>
-        <br>
-        <li>什么是观察者模式？</li>
-        <br>
-        <li>事件监听 document.addEventListener('click', fn, false)</li>
+
+        <li>原型，原型对象，原型链, 构造函数</li>
+
+        <li>什么是发布订阅者模式 <small>设计模式-核心 Vue2.x/3.x</small></li>
+
+        <li>什么是观察者模式</li>
     </ul>
     <script>
+        // 发布者 <----- 观察者
+
         /**
-         * @func 观察者模式：观察者观察发布者是否发布消息，发布了消息，执行事件
+         * @func 观察者模式
          * @desc 成员： 发布者，观察者
-         * @desc 使用： 1）发布者添加观察者，2）发布消息，3）观察者执行事件
+         * @desc 使用： 发布者发布消息，订阅者执行订阅事件 
          */
 
-        // 发布者
         class Releaser {
             constructor() {
-                this.watcherHub = {}
+                this.watcherHub = []
             }
-
-            // 添加观察者
-            addWatcher(key, watcher) {
-                if (!key) return
+            addWatcher(watcher) {
                 if (watcher && watcher.update) {
-                    (this.watcherHub[key] || (this.watcherHub[key] = [])).push(watcher)
+                    this.watcherHub.push(watcher)
                 }
             }
-
-            // 发布通知
-            notify(key, msg) {
-                [].forEach.call(this.watcherHub[key], function(watcher) {
-                    watcher.update.call(this, msg)
+            release(msg) {
+                this.watcherHub.forEach(watcher => {
+                    // fn.apply(this, [msg])
+                    watcher.update.apply(this, [msg])
                 })
             }
         }
 
-        // 观察者
         class Watcher {
             constructor() {}
             update(msg) {
-                console.log('观察者观察消息：', msg)
+                console.log(100, msg)
             }
         }
 
-        /* ------------ 使用 ------------- */
-        // 1）初始化
-        let w1 = new Watcher()
+        // 使用
         let r1 = new Releaser()
-        // 2）添加观察者
-        r1.addWatcher('warning', w1)
-        // 3）发布消息
-        r1.notify('warning', '我捡到了100w')
+        let w1 = new Watcher()
+        
+        r1.addWatcher(w1)
+
+        // r1.release('发布消息11111')
 
 
+        
 
 
-
-
+        // 发布者 ---> 消息中心(订阅号) <--- 订阅者
         /**
-         * @func 发布-订阅模式
-         * @desc 理解：如微信订阅号： 发布者发布消息，通过微信订阅平台，将消息推送给订阅者；又如淘宝平台，商家在淘宝上新货，淘宝推送商品给顾客
-         * @desc 成员：发布者、订阅者、事件中心(中介)
-         * @desc 使用：发布者发布消息，事件中心存储消息，事件中心推送消息，订阅者执行订阅事件
+         * @func 发布订阅者模式
+         * @desc 成员： 发布者，订阅者，消息中心
+         * @desc 使用： 发布者发布消息，消息中心收集消息，消息中心推送消息给订阅者 
          */
         let Event = function() {
-            // 事件中心
-            this.eventHub = {}
+            this.eventHub = {} // 消息中心 (中介)
         }
 
         Event.prototype = {
             // 添加订阅者
             subscribe(key, fn) {
-                if (!key) {
-                    alert('订阅失败！必须传入事件类别')
-                    return
-                }
                 (this.eventHub[key] || (this.eventHub[key] = [])).push(fn)
             },
-            // 发布者
+            // 添加发布者
             release() {
-                let key = Array.prototype.shift.call(arguments),
-                    fns = this.eventHub[key]
-                    
+                // console.log(Object.values(arguments)[0])
+                // let [ key1, ...args ] = arguments // Es6
+                let key = Array.prototype.shift.call(arguments),  // Es5
+                    fns = this.eventHub[key];
                 if (!fns || fns.length === 0) return
                 fns.forEach(fn => {
                     fn.apply(this, arguments)
                 })
             },
-            // 取消订阅
+            // 移除订阅者
             remove(key, fn) {
                 let fns = this.eventHub[key]
                 if (!fns || fns.length === 0) return
+                // 产品思维： 1）批量移除； 2）指定移除
                 if (!fn) {
-                    fns = []
+                    this.eventHub[key].length = 0
                 } else {
-                    for (let i = fns.length -1; i >= 0 ; i--) {
+                    // 移除指定的订阅者
+                    for (let i = fns.length - 1; i >= 0; i--) {
                         let _fn = fns[i]
-                        (_fn === fn) && (fns.splice(i, 1))
+                        (_fn === fn) && (this.eventHub[key].splice(i, 1))
                     }
                 }
             }
         }
 
-        // 使用
-        let sample = new Event()
 
-        sample.subscribe('e1', function(msg) {
-            console.log('订阅者订阅了E1: ', msg)
+
+        // 使用
+        let e1 = new Event()
+        let e2 = new Event()
+
+
+        e1.subscribe('a', function(msg) {
+            console.log('订阅者订阅了a事件', msg)
+        })
+        e1.subscribe('b', function(msg) {
+            console.log('订阅者订阅了b事件', msg)
+        })
+        e2.subscribe('d', function(msg) {
+            console.log('订阅者订阅了b事件', msg)
+        })
+        e2.subscribe('e', function(msg) {
+            console.log('订阅者订阅了b事件', msg)
         })
 
-        sample.release('e1', '发布者发布了e1类型事件')
+        e1.release('a', '天上掉馅饼了')
+        e1.release('b', '天上掉馅饼了')
+
+
+       
+
+        let Event = (function() {
+            this.eventHub = {} // 私有变量
+            function subscribe() {
+                console.log(this.eventHub)
+            }
+            function relese() {}
+            function remove() {}
+
+            return {
+                subscribe,
+                relese,
+                remove
+            }
+        })()
+
+
+
+        // 匿名自执行函数 jQuery  - 闭包
+        (function(window) {
+            
+            function $(selector) {
+                document.querySelectorAll(selector)
+            }
+
+            return $
+        })(window)
+
+        $('p').innerText() // smart
     </script>
 </body>
 </html>
