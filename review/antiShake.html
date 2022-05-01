@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template-Page</title>
+</head>
+
+<body>
+    <h2>antiShake-throttle</h2>
+    <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
+    <ul>
+        <li>什么是防抖，什么是节流</li>
+        <button onclick="handleShake()">防抖测试</button>
+        <button onclick="handleThot()">节流测试</button>
+    </ul>
+    <script>
+        // 模拟请求
+        function request() {
+            console.log('发起请求了')
+        }
+
+        /**
+         * @func antiShake
+         * @desc 用户频繁发起接口相同，参数不同的请求，造成页面显示抖动感受，限制在一定时间内，仅发起参数最新的那个接口
+         * @desc 定时器，当新请求过来时，放弃上次请求，重新计时
+         * @desc 常用场景：模糊搜索
+         * @desc 实现方式： 闭包
+         */
+        function antiShake(fn, wait) {
+            let timer = null
+            return args => {
+                console.log(timer)
+                if (timer) clearTimeout(timer)
+                timer = setTimeout(fn, wait)
+            }
+        }
+
+        // 防抖测试
+        let ats = antiShake(request, 2000)
+        function handleShake() {
+            ats()
+        }
+
+
+        
+
+        /**
+         * @func 节流-throttle
+         * @desc 用户无意识或因某些原因，同一时间内发起接口相同、参数相同的请求；为节约流量和保证用户体验，只返回第一个请求
+         * @desc 定时器，当新请求过来时，如果定时器还未执行，则忽略该请求
+         * @desc 常用场景：表单提交
+         * @desc 实现方式：闭包
+         */
+        function throttle(fn, wait) {
+            let timer
+            return args => {
+                console.log(timer)
+                if (timer) return
+                timer = setTimeout(() => {
+                    fn && fn()
+                    timer = null
+                }, wait)
+            }
+        }
+
+        // 节流测试
+        let thot = throttle(request, 2000)
+        function handleThot() {
+            thot()
+        }
+    </script>
+</body>
+</html>

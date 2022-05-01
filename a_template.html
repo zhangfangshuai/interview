@@ -8,159 +8,88 @@
 </head>
 
 <body>
-    <h2>Relase-Subscribe-Module - 发布订阅者模式</h2>
+    <h2>ES6</h2>
     <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
-    <ul>
-        <li>什么是闭包？</li>
-
-        <li>原型，原型对象，原型链, 构造函数</li>
-
-        <li>什么是发布订阅者模式 <small>设计模式-核心 Vue2.x/3.x</small></li>
-
-        <li>什么是观察者模式</li>
-    </ul>
     <script>
-        // 发布者 <----- 观察者
+        /**
+         * @func 字符串也可以解构赋值
+         * @desc 结构后时一个类数组格式，需要用数组解构规则
+         */
+        let str = 'abc'
+        const [x, y, z] = str
+        console.log(x, y, z)
+
+
+
 
         /**
-         * @func 观察者模式
-         * @desc 成员： 发布者，观察者
-         * @desc 使用： 发布者发布消息，订阅者执行订阅事件 
+         * @func 数组的多层解构赋值
+         * @desc 数组变量的取值由他的位置、顺序决定
          */
-
-        class Releaser {
-            constructor() {
-                this.watcherHub = []
-            }
-            addWatcher(watcher) {
-                if (watcher && watcher.update) {
-                    this.watcherHub.push(watcher)
-                }
-            }
-            release(msg) {
-                this.watcherHub.forEach(watcher => {
-                    // fn.apply(this, [msg])
-                    watcher.update.apply(this, [msg])
-                })
-            }
-        }
-
-        class Watcher {
-            constructor() {}
-            update(msg) {
-                console.log(100, msg)
-            }
-        }
-
-        // 使用
-        let r1 = new Releaser()
-        let w1 = new Watcher()
-        
-        r1.addWatcher(w1)
-
-        // r1.release('发布消息11111')
+        let sourceArr = [[12, 30], [49, 91], 7]
+        const [[a0, b0], [c0, d0], e0] = sourceArr
+        console.log(a0, c0)
 
 
         
 
-
-        // 发布者 ---> 消息中心(订阅号) <--- 订阅者
         /**
-         * @func 发布订阅者模式
-         * @desc 成员： 发布者，订阅者，消息中心
-         * @desc 使用： 发布者发布消息，消息中心收集消息，消息中心推送消息给订阅者 
+         * @func 对象的解构赋值
+         * @desc 对象属性没有次序，变量必须与熟悉过同名，才能取到正确的值
+         * @desc 如果需要更改变量名，可以使用“:”进行重命名，冒号前是模式，不会被赋值，冒号后是变量
+         * @desc 结构赋值可以指定默认值，在变量后面添加等号即可。{ a = 1 } = obj
          */
-        let Event = function() {
-            this.eventHub = {} // 消息中心 (中介)
-        }
+        let obj1 = { foo: 1, bar: 2 }
+        const { foo, bar } = obj1
+        console.log(foo) // 1
 
-        Event.prototype = {
-            // 添加订阅者
-            subscribe(key, fn) {
-                (this.eventHub[key] || (this.eventHub[key] = [])).push(fn)
+        let obj2 = { noobivariable: 110, bar2: 21 }
+        const { noobivariable: noob, bar2 } = obj2
+        console.log(noob) // 110
+        // console.log(noobivariable) // 报错
+
+        let sourceObj = {
+            out1: {
+                a2: 13,
+                b2: 22
             },
-            // 添加发布者
-            release() {
-                // console.log(Object.values(arguments)[0])
-                // let [ key1, ...args ] = arguments // Es6
-                let key = Array.prototype.shift.call(arguments),  // Es5
-                    fns = this.eventHub[key];
-                if (!fns || fns.length === 0) return
-                fns.forEach(fn => {
-                    fn.apply(this, arguments)
-                })
+            out2: {
+                h2: 20,
+                g2: 18
             },
-            // 移除订阅者
-            remove(key, fn) {
-                let fns = this.eventHub[key]
-                if (!fns || fns.length === 0) return
-                // 产品思维： 1）批量移除； 2）指定移除
-                if (!fn) {
-                    this.eventHub[key].length = 0
-                } else {
-                    // 移除指定的订阅者
-                    for (let i = fns.length - 1; i >= 0; i--) {
-                        let _fn = fns[i]
-                        (_fn === fn) && (this.eventHub[key].splice(i, 1))
-                    }
+            out3: 73
+        }
+        
+
+        // 当进行对象深层解构赋值时，如下，out2仅是模式，不会被赋值，且这儿必须写且名字必须和属性一致。可以像out1这样赋值。
+        const { out1, out1: {a2, b2}, out2: {h2, g2}, out3 } = sourceObj
+        console.log(out1, a2)
+
+        let sourceObj2 = {
+            outer1: {
+                cet1: {
+                    innerA1: 130,
+                    innerB1: 210
+                },
+                cet2: {
+                    innerA2: 135,
+                    innerB2: 215
                 }
             }
         }
+        const { outer1, outer1: { cet1, cet1: {innerA1}} } = sourceObj2
+        console.log(outer1, cet1, innerA1)
 
 
 
-        // 使用
-        let e1 = new Event()
-        let e2 = new Event()
+        // 给对象解构赋值增加默认值
+        let smObj = {
+            s1: 1,
+            s2: 2
+        }
 
-
-        e1.subscribe('a', function(msg) {
-            console.log('订阅者订阅了a事件', msg)
-        })
-        e1.subscribe('b', function(msg) {
-            console.log('订阅者订阅了b事件', msg)
-        })
-        e2.subscribe('d', function(msg) {
-            console.log('订阅者订阅了b事件', msg)
-        })
-        e2.subscribe('e', function(msg) {
-            console.log('订阅者订阅了b事件', msg)
-        })
-
-        e1.release('a', '天上掉馅饼了')
-        e1.release('b', '天上掉馅饼了')
-
-
-       
-
-        let Event = (function() {
-            this.eventHub = {} // 私有变量
-            function subscribe() {
-                console.log(this.eventHub)
-            }
-            function relese() {}
-            function remove() {}
-
-            return {
-                subscribe,
-                relese,
-                remove
-            }
-        })()
-
-
-
-        // 匿名自执行函数 jQuery  - 闭包
-        (function(window) {
-            
-            function $(selector) {
-                document.querySelectorAll(selector)
-            }
-
-            return $
-        })(window)
-
-        $('p').innerText() // smart
+        const { s1, s2, s3 = 10 } = smObj
+        console.log(s1, s2, s3)
     </script>
 </body>
 </html>

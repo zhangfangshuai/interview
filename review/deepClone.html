@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template-Page</title>
+</head>
+
+<body>
+    <h2>deepClone</h2>
+    <div style="width: 100%; height: 2px; background: #F5F5F5;"></div>
+    <ul>
+        <li>深拷贝鱼浅拷贝</li>
+    </ul>
+    <script>
+        /**
+         * @func 深拷贝
+         * @desc 对象\数组, 每一层都进行拷贝
+         * @desc 如果
+         */
+        function deepClone(source) {
+            if (typeof source !== 'object') return source
+            let target = source instanceof Array ? [] : {}
+            for( let key in source) {
+                if (source.hasOwnProperty(key)) {
+                    if(source[key] && typeof source[key] === 'object') {
+                        target[key] = source[key] instanceof Array ? [] : {} // 解释性代码，其实并无用
+                        target[key] = deepClone(source[key])
+                    } else {
+                        target[key] = source[key]
+                    }
+                }
+            }
+            return target
+        }
+    </script>
+</body>
+</html>
