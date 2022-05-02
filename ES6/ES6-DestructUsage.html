@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>study-ES6</title>
+</head>
+
+<body>
+    <h2>ES6-解构的使用技巧</h2>
+    <script>
+        /**
+         * @func 解构赋值的几个使用技巧 
+         **/
+        // 1) 交换变量的值
+        let o = 1, p = 2;
+        [o, p] = [p, o]
+
+        // 2) 从函数中返回多个值
+        function example() {
+            return [1, 2, 3]
+        }
+        let [u, v, w] = example()
+        
+        function example2() {
+            return {
+                person: 'zhangfs',
+                looks: 'handsome'
+            }
+        }
+        let { person, looks } = example2()
+
+        // 3) 函数参数定义
+        function foo([x, y, z]) {} // 有次序
+        foo([1, 2, 3])
+
+        function bar({j, p, g}) {} // 无次序
+        bar({g: 1, p: 2, j: 3})
+
+        // 4) 快速提取JSON数据
+        let jsonData = {
+            id: 42,
+            status: 'OK',
+            data: [210, 389]
+        };
+        let { id, status, data: nums } = jsonData
+        console.log(id, status, nums);  // 42, 'OK', [210, 389]
+
+        // 5) 给函数参数设置默认值
+        function getInfo(id = '10001') {}
+        getInfo(id);
+
+        // 6) 使用for...of遍历Map(或具备Iterator接口的对象)
+        const map = new Map()
+        map.set('first', 'hello')
+        map.set('second', 'world')
+
+        for (let [key, value] of map) {
+            console.log(`${key} is ${value}`)
+        }
+        // 只提取键或提取值
+        for (let [key] of map) {}
+        for (let [, value] of map) {}
+
+        // 7) 按需加载引入模块的指定方法
+        const { SourceMapConsumer, SourceNode } = require('source-map');
+    </script>
+</body>
+</html>

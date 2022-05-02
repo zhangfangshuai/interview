@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>study-ES6</title>
+</head>
+
+<body>
+    <h2>ES6</h2>
+    <script>
+        /**
+         * @func var、let、const 
+         */
+
+        /**
+         * @func 3个var的存在不合理的地方，let已实现
+         */
+        // 1) 存在变量提升。先使用后定义，不符合常人逻辑，容易出现逻辑混乱
+        console.log(num) // undefined，不会报错。使用let会报错未定义
+        var num = 123
+
+        // 2) 存在变量覆盖
+        // 在大型项目中，如果出现变量覆盖，很可能出现意想不到的错误，还难以查到
+        var num1 = 10
+        var num1 = 20
+        console.log(num1)   // 20 使用let会报错重复定义
+
+        // 3) 没有块级作用域。 ==> 红杏出墙
+        // for块级作用域内的变量在外部依旧可以被访问
+        function fn1() {
+            for(var i = 0; i < 3; i++) {
+                console.log(i)   // 0,1,2
+            }
+            console.log(i)  // 3  使用let会报错未定义
+        }
+        fn1()
+
+
+        /**
+        * @func const定义常量，仅针对变量所指定地址空间
+        * @desc 基本数据类型变量不能修改。（除非使用Object.defineProperty(),但我想你没毛病去改这个）
+        * @desc 声明之后必须初始化赋值，否则报错
+        * @desc 支持let其他属性
+        * @desc 使用const定义的一般称作常量，使用大写定义，用作全局变量
+        */
+        const DEMO = 'study'  // 常量
+
+
+
+        /**
+         * @func 字符串也可以解构赋值
+         * @desc 结构后时一个类数组格式，需要用数组解构规则
+         */
+        let str = 'abc'
+        const [x, y, z] = str
+        console.log(x, y, z)
+
+
+
+        /**
+         * @func 数组的解构赋值，顺序解构
+         * @desc 数组变量的取值由他的位置、顺序决定
+         * @desc 模式相同，变量名任意取
+         */
+        let sourceArr = [[12, 30], [49, 91], 7]
+        const [[a0, b0], [c0, d0], e0] = sourceArr
+        console.log(a0, c0)
+
+        /**
+         * @func 数组解构的特殊用法
+         * @desc 由于数组本质是特殊的对象，因此可以对数组进行对象属性的解构
+         */
+        let arr1 = [1, 2, 3, 4, 5,  6];
+        let {0 : first, [arr.length - 1] : last} = arr1;
+        first // 1
+        last // 6
+
+
+        
+
+        /**
+         * @func 对象的解构赋值，模式匹配
+         * @desc 对象属性没有次序，变量必须与属性同名，才能取到正确的值，这个叫模式匹配
+         * @desc 格式：{模式名:变量名}，如果变量名和模式名相同，则可省略变量名。
+         * @desc 注意：模式名并不会被赋值，只有变量才会被赋值，当省略变量名时，本质上也是有JS引擎给变量赋值而非模式。
+         * @desc 结构赋值可以指定默认值，在变量后面添加等号即可。{ a = 1 } = obj
+         */
+        let obj1 = { foo: 1, bar: 2 }
+        const { foo, bar } = obj1
+        console.log(foo) // 1
+
+        let obj2 = { noobivariable: 110, bar2: 21 }
+        const { noobivariable: noob, bar2 } = obj2
+        console.log(noob) // 110
+        // console.log(noobivariable) // 报错
+        
+
+        /**
+         * @func 完整的对象解构赋值
+         * @desc 也就是说，对象的解构赋值的内部机制，是先找到同名属性，然后再赋给对应的变量。真正被赋值的是后者，而不是前者。
+         */
+        let { fob: fob, bap: bap } = { fob: 'aaa', bap: 'bbb' };
+        console.log(fob, bap)
+
+        let sourceObj = {
+            out1: {
+                a2: 13,
+                b2: 22
+            },
+            out2: {
+                h2: 20,
+                g2: 18
+            },
+            out3: 73
+        }
+        
+
+        // 当进行对象深层解构赋值时，如下，out2仅是模式，不会被赋值，且这儿必须写且名字必须和属性一致。可以像out1这样赋值。
+        const { out1, out1: {a2, b2}, out2: {h2, g2}, out3 } = sourceObj
+        console.log(out1, a2)
+
+        let sourceObj2 = {
+            outer1: {
+                cet1: {
+                    innerA1: 130,
+                    innerB1: 210
+                },
+                cet2: {
+                    innerA2: 135,
+                    innerB2: 215
+                }
+            }
+        }
+        const { outer1, outer1: { cet1, cet1: {innerA1}} } = sourceObj2
+        console.log(outer1, cet1, innerA1)
+
+
+        // 给对象解构赋值增加默认值
+        let smObj = { s1: 1, s2: 2 }
+
+        const { s1, s2, s3 = 10 } = smObj
+        console.log(s1, s2, s3) // 1 2 10
+
+
+
+
+        /**
+         * @func ...剩余操作符
+         * @desc 取出未被访问的剩余数据
+         */ 
+        let book = { title: 'JS', author: 'zfs', pages: 280, price: 130 }
+        let { title, author, ...rest } = book
+        console.log(rest)   // { pages: 280, price: 130 }
+
+
+
+        /**
+         * @func Set数据类型
+         * @desc 去重后的数组
+         */
+        let arr = [12, 43, 23, 12, 23, 55]
+        let uniqueArr = [...new Set(arr)]
+        console.log(uniqueArr) // [12, 43, 12, 55]
+
+
+
+        /**
+         * @func Promise
+         * @desc ES6中提供的一个异步编程的解决方案，它本身是一个构造函数，
+         * @desc 实例化对象特点：（1）状态不受外界影响：pending(执行中)/fulfilled(已成功)/rejected(已失败)；【注】promise的已成功表示异步方法执行完毕，不是接口api调用成功失败
+         * @desc 实例化对象特点：（2）状态一旦改变，就不会再发生变化。这个改变结果就固定了，称为resolved(已定型)
+         * @desc promise优势：将异步操作队列化，按照期望的顺序执行，即使是多重异步操作，也可以方便的使用promise进行链式调用
+         * @desc promise缺陷：（1）一旦创建就立执行，无法取消；（2）如果不设置回调函数，内部错误不会反应到外部；（3）pending状态下无法得知当前进展到哪一步，是刚开始还是快结束
+         * @desc 以下题目是promise的基础面试题
+         */
+        // 构造函数 同步执行。创建后立刻执行！
+        const promise = new Promise((resolve, reject) => {
+            console.log(1)
+            resolve()
+            console.log(2)
+        })
+        // .then() 回调函数，异步执行
+        promise.then(() => {
+            console.log(3)
+        })
+        // 常规逻辑，顺序执行
+        console.log(4)
+
+        // 输出结果： 1，2，4，3
+    </script>
+</body>
+</html>

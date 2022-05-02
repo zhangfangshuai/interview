@@ -30,6 +30,15 @@
         const [[a0, b0], [c0, d0], e0] = sourceArr
         console.log(a0, c0)
 
+        /**
+         * @func 数组解构的特殊用法
+         * @desc 由于数组本质是特殊的对象，因此可以对数组进行对象属性的解构
+         */
+        let arr = [1, 2, 3, 4, 5,  6];
+        let {0 : first, [arr.length - 1] : last} = arr;
+        first // 1
+        last // 6
+
 
         
 
@@ -47,6 +56,13 @@
         const { noobivariable: noob, bar2 } = obj2
         console.log(noob) // 110
         // console.log(noobivariable) // 报错
+        
+        /**
+         * @func 完整的对象解构赋值
+         * @desc 也就是说，对象的解构赋值的内部机制，是先找到同名属性，然后再赋给对应的变量。真正被赋值的是后者，而不是前者。
+         */
+        let { fob: fob, bap: bap } = { fob: 'aaa', bap: 'bbb' };
+        console.log(fob, bap)
 
         let sourceObj = {
             out1: {
@@ -89,7 +105,7 @@
         }
 
         const { s1, s2, s3 = 10 } = smObj
-        console.log(s1, s2, s3)
+        console.log(s1, s2, s3) // 1 2 10
     </script>
 </body>
 </html>
